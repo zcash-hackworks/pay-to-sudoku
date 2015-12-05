@@ -2,21 +2,21 @@ template<typename FieldT>
 l_gadget<FieldT>::l_gadget(protoboard<FieldT> &pb, unsigned int n) :
         gadget<FieldT>(pb, FMT(annotation_prefix, " l_gadget"))
 {
-    dimension = n;
+    dimension = n * n;
 
-    const size_t input_size_in_bits = n * n * 8;
+    const size_t input_size_in_bits = dimension * dimension * 8;
     {
         const size_t input_size_in_field_elements = div_ceil(input_size_in_bits, FieldT::capacity());
         input_as_field_elements.allocate(pb, input_size_in_field_elements, "input_as_field_elements");
         this->pb.set_input_sizes(input_size_in_field_elements);
     }
 
-    puzzle_enforce.allocate(pb, n*n, "puzzle solution subset enforcement");
+    puzzle_enforce.allocate(pb, dimension*dimension, "puzzle solution subset enforcement");
 
-    puzzle_values.resize(n*n);
-    solution_values.resize(n*n);
+    puzzle_values.resize(dimension*dimension);
+    solution_values.resize(dimension*dimension);
 
-    for (unsigned int i = 0; i < (n*n); i++) {
+    for (unsigned int i = 0; i < (dimension*dimension); i++) {
         puzzle_values[i].allocate(pb, 8, "puzzle_values[i]");
         solution_values[i].allocate(pb, 8, "solution_values[i]");
         input_as_bits.insert(input_as_bits.end(), puzzle_values[i].begin(), puzzle_values[i].end());
@@ -88,10 +88,11 @@ void l_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzz
 template<typename FieldT>
 r1cs_primary_input<FieldT> l_input_map(unsigned int n, std::vector<bit_vector> &input_puzzle_values)
 {
-    assert(input_puzzle_values.size() == n*n);
+    unsigned int dimension = n*n;
+    assert(input_puzzle_values.size() == dimension*dimension);
     bit_vector input_as_bits;
 
-    for (unsigned int i = 0; i < n*n; i++) {
+    for (unsigned int i = 0; i < dimension*dimension; i++) {
         assert(input_puzzle_values[i].size() == 8);
         input_as_bits.insert(input_as_bits.end(), input_puzzle_values[i].begin(), input_puzzle_values[i].end());
     }

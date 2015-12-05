@@ -29,7 +29,7 @@ r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair()
     typedef Fr<ppzksnark_ppT> FieldT;
 
     protoboard<FieldT> pb;
-    l_gadget<FieldT> g(pb, 9);
+    l_gadget<FieldT> g(pb, 3);
     g.generate_r1cs_constraints();
     const r1cs_constraint_system<FieldT> constraint_system = pb.get_constraint_system();
 
@@ -47,7 +47,7 @@ boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksna
     typedef Fr<ppzksnark_ppT> FieldT;
 
     protoboard<FieldT> pb;
-    l_gadget<FieldT> g(pb, 9);
+    l_gadget<FieldT> g(pb, 3);
     g.generate_r1cs_constraints();
 
     auto new_puzzle = convertPuzzleToBool(puzzle);
@@ -72,7 +72,7 @@ bool verify_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_ke
 
     auto new_puzzle = convertPuzzleToBool(puzzle);
 
-    const r1cs_primary_input<FieldT> input = l_input_map<FieldT>(9, new_puzzle);
+    const r1cs_primary_input<FieldT> input = l_input_map<FieldT>(3, new_puzzle);
 
     return r1cs_ppzksnark_verifier_strong_IC<ppzksnark_ppT>(verification_key, input, proof);
 }
