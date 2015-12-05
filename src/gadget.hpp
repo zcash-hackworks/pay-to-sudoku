@@ -26,6 +26,27 @@ public:
 };
 
 template<typename FieldT>
+class sodoku_closure_gadget : public gadget<FieldT> {
+public:
+    unsigned int dimension;
+
+    /*
+        This is an array of bits which indicates whether this
+        cell is a particular number in the dimension. It is
+        the size of the dimension N^2 of the puzzle. Only one
+        bit is set.
+    */
+    std::vector<pb_variable_array<FieldT>> flags;
+
+    sodoku_closure_gadget(protoboard<FieldT> &pb,
+                          unsigned int dimension,
+                          std::vector<pb_variable_array<FieldT>> &flags
+                         );
+    void generate_r1cs_constraints();
+    void generate_r1cs_witness();
+};
+
+template<typename FieldT>
 class sodoku_gadget : public gadget<FieldT> {
 public:
     unsigned int dimension;
@@ -41,6 +62,9 @@ public:
     std::vector<pb_linear_combination<FieldT>> solution_numbers;
 
     std::vector<std::shared_ptr<sodoku_cell_gadget<FieldT>>> cells;
+
+    std::vector<std::shared_ptr<sodoku_closure_gadget<FieldT>>> closure_rows;
+    std::vector<std::shared_ptr<sodoku_closure_gadget<FieldT>>> closure_cols;
 
     pb_variable_array<FieldT> puzzle_enforce;
 

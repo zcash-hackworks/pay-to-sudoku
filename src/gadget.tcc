@@ -1,4 +1,36 @@
 template<typename FieldT>
+sodoku_closure_gadget<FieldT>::sodoku_closure_gadget(protoboard<FieldT> &pb,
+                                               unsigned int dimension,
+                                               std::vector<pb_variable_array<FieldT>> &flags
+                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sodoku_closure_gadget")),
+                                                   dimension(dimension), flags(flags)
+{
+    assert(flags.size() == dimension);
+}
+
+template<typename FieldT>
+void sodoku_closure_gadget<FieldT>::generate_r1cs_constraints()
+{
+    for (unsigned int i=0; i<dimension; i++) {
+        linear_combination<FieldT> sum;
+
+        for (unsigned int j=0; j<dimension; j++) {
+            sum = sum + flags[j][i];
+        }
+
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(1, 1, sum), "balance");
+    }
+}
+
+template<typename FieldT>
+void sodoku_closure_gadget<FieldT>::generate_r1cs_witness()
+{
+    
+}
+
+
+
+template<typename FieldT>
 sodoku_cell_gadget<FieldT>::sodoku_cell_gadget(protoboard<FieldT> &pb,
                                                unsigned int dimension,
                                                pb_linear_combination<FieldT> &number
@@ -13,6 +45,9 @@ void sodoku_cell_gadget<FieldT>::generate_r1cs_constraints()
 {
     for (unsigned int i = 0; i < dimension; i++) {
         generate_boolean_r1cs_constraint<FieldT>(this->pb, flags[i], "enforcement bitness");
+
+        // this ensures that any flag that is set ENFORCES that the number
+        // is i + 1. as a result, at most one flag can be set.
         this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(number - (i+1), flags[i], 0), "enforcement");
     }
 }
@@ -62,6 +97,21 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
         cells[i].reset(new sodoku_cell_gadget<FieldT>(this->pb, dimension, solution_numbers[i]));
     }
 
+    closure_rows.resize(dimension);
+    closure_cols.resize(dimension);
+
+    for (unsigned int i = 0; i < dimension; i++) {
+        std::vector<pb_variable_array<FieldT>> row_flags;
+        std::vector<pb_variable_array<FieldT>> col_flags;
+        for (unsigned int j = 0; j < dimension; j++) {
+            row_flags.push_back(cells[i*dimension + j]->flags);
+            col_flags.push_back(cells[j*dimension + i]->flags);
+        }
+
+        closure_rows[i].reset(new sodoku_closure_gadget<FieldT>(this->pb, dimension, row_flags));
+        closure_cols[i].reset(new sodoku_closure_gadget<FieldT>(this->pb, dimension, col_flags));
+    }
+
     assert(input_as_bits.size() == input_size_in_bits);
     unpack_inputs.reset(new multipacking_gadget<FieldT>(this->pb, input_as_bits, input_as_field_elements, FieldT::capacity(), FMT(this->annotation_prefix, " unpack_inputs")));
 }
@@ -88,6 +138,11 @@ void sodoku_gadget<FieldT>::generate_r1cs_constraints()
     
         // enforce cell constraints
         cells[i]->generate_r1cs_constraints();
+    }
+
+    for (unsigned int i = 0; i < dimension; i++) {
+        closure_rows[i]->generate_r1cs_constraints();
+        closure_cols[i]->generate_r1cs_constraints();
     }
 
     unpack_inputs->generate_r1cs_constraints(true);
