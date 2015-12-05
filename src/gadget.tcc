@@ -5,25 +5,52 @@ sodoku_encryption_key<FieldT>::sodoku_encryption_key(protoboard<FieldT> &pb,
                                                ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sodoku_closure_gadget")),
                                                    seed_key(seed_key), dimension(dimension)
 {
+    assert(seed_key.size() == (256-8));
     unsigned int num_key_digests = div_ceil(dimension * dimension * 8, 256);
 
+    padding_var.reset(new digest_variable<FieldT>(pb, 256, "padding"));
+
     key.resize(num_key_digests);
+    //key_blocks.resize(num_key_digests);
 
     for (unsigned int i = 0; i < num_key_digests; i++) {
         key[i].reset(new digest_variable<FieldT>(pb, 256, "key[i]"));
+        /*
+        key_blocks[i].reset(new block_variable<FieldT>(pb, {
+            seed_key->bits,
+            padding_var->bits
+        }, "h_r1_block"));
+        */
     }
 }
 
 template<typename FieldT>
 void sodoku_encryption_key<FieldT>::generate_r1cs_constraints()
 {
-    
+    unsigned int num_key_digests = div_ceil(dimension * dimension * 8, 256);
+
+    padding_var->generate_r1cs_constraints(); // TODO: probably unnecessary
+
+    for (unsigned int i = 0; i < 256; i++) {
+        this->pb.add_r1cs_constraint(
+            r1cs_constraint<FieldT>(
+                { padding_var->bits[i] },
+                { 1 },
+                { sha256_padding[i] ? 1 : 0 }),
+            "constrain_padding");
+    }
+
+    for (unsigned int i = 0; i < num_key_digests; i++) {
+        key[i]->generate_r1cs_constraints();
+    }
 }
 
 template<typename FieldT>
 void sodoku_encryption_key<FieldT>::generate_r1cs_witness()
 {
-    
+    for (unsigned int i = 0; i < 256; i++) {
+        this->pb.val(padding_var->bits[i]) = sha256_padding[i] ? 1 : 0;
+    }   
 }
 
 template<typename FieldT>
@@ -156,7 +183,9 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
     }
 
     seed_key.reset(new digest_variable<FieldT>(pb, 256, "seed_key"));
-    key.reset(new sodoku_encryption_key<FieldT>(pb, dimension, seed_key->bits));
+
+    pb_variable_array<FieldT> seed_key_cropped(seed_key->bits.begin(), seed_key->bits.begin() + (256 - 8));
+    key.reset(new sodoku_encryption_key<FieldT>(pb, dimension, seed_key_cropped));
 
     assert(input_as_bits.size() == input_size_in_bits);
     unpack_inputs.reset(new multipacking_gadget<FieldT>(this->pb, input_as_bits, input_as_field_elements, FieldT::capacity(), FMT(this->annotation_prefix, " unpack_inputs")));

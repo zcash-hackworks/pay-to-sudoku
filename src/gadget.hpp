@@ -3,13 +3,18 @@
 
 using namespace libsnark;
 
+bool sha256_padding[256] = {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0};
+
 template<typename FieldT>
 class sodoku_encryption_key : public gadget<FieldT> {
 public:
-    pb_variable_array<FieldT> seed_key; // 256 bit key
+    pb_variable_array<FieldT> seed_key; // (256-8) bit key
     unsigned int dimension;
 
+    std::shared_ptr<digest_variable<FieldT>> padding_var;
+
     std::vector<std::shared_ptr<digest_variable<FieldT>>> key; // dimension*dimension*8 bit key
+    std::vector<std::shared_ptr<block_variable<FieldT>>> key_blocks;
 
     sodoku_encryption_key(protoboard<FieldT> &pb,
                        unsigned int dimension,
