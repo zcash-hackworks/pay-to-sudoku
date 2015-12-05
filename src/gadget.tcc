@@ -12,7 +12,6 @@ l_gadget<FieldT>::l_gadget(protoboard<FieldT> &pb, unsigned int n) :
     }
 
     puzzle_enforce.allocate(pb, n*n, "puzzle solution subset enforcement");
-    puzzle_enforce_as.reserve(n*n);
 
     puzzle_values.resize(n*n);
     solution_values.resize(n*n);
@@ -48,15 +47,10 @@ void l_gadget<FieldT>::generate_r1cs_constraints()
         generate_boolean_r1cs_constraint<FieldT>(this->pb, puzzle_enforce[i], "enforcement bitness");
 
         // puzzle_numbers[i] must be 1 if the puzzle value is nonzero
-        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(puzzle_numbers[i], 1 - puzzle_enforce[i], 0), FMT(this->annotation_prefix, " balance"));
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(puzzle_numbers[i], 1 - puzzle_enforce[i], 0), "enforcement");
         
-        // we must be able to construct an inv such that
-        // solution_numbers[i] * puzzle_enforce[i] = inv
-        // puzzle_numbers[i] * puzzle_enforce[i] = inv
-        // to enforce that the solutions are equal if puzzle_enforce[i] is 1
-        //    or that they can be unequal if puzzle_enforce[i] is 0
-        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(solution_numbers[i], puzzle_enforce[i], puzzle_enforce_as[i]), FMT(this->annotation_prefix, " balance"));
-        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(puzzle_numbers[i], puzzle_enforce[i], puzzle_enforce_as[i]), FMT(this->annotation_prefix, " balance"));
+        // solution_numbers[i] must equal puzzle_numbers[i] if puzzle_enforce[i] is 1
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(puzzle_enforce[i], (solution_numbers[i] - puzzle_numbers[i]), 0), "enforcement equality");
     }
 
     unpack_inputs->generate_r1cs_constraints(true);
@@ -86,12 +80,6 @@ void l_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzz
         }
 
         this->pb.val(puzzle_enforce[i]) = enforce ? FieldT::one() : FieldT::zero();
-
-        pb_linear_combination<FieldT> enforce_as;
-        enforce_as.assign(this->pb, pb_packing_sum<FieldT>(pb_variable_array<FieldT>(solution_values[i].rbegin(), solution_values[i].rend())) * this->pb.val(puzzle_enforce[i]));
-        enforce_as.evaluate(this->pb);
-
-        puzzle_enforce_as.emplace_back(enforce_as);
     }
 
     unpack_inputs->generate_r1cs_witness_from_bits();
