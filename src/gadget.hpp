@@ -15,6 +15,9 @@ public:
     std::vector<pb_variable_array<FieldT>> puzzle_values;
     std::vector<pb_variable_array<FieldT>> solution_values;
 
+    std::vector<pb_linear_combination<FieldT>> puzzle_numbers;
+    std::vector<pb_linear_combination<FieldT>> solution_numbers;
+
     pb_variable_array<FieldT> puzzle_enforce;
 
 
