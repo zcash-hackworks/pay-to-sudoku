@@ -43,10 +43,10 @@ void l_gadget<FieldT>::generate_r1cs_constraints()
 
         // enforce solution is subset of puzzle
 
-        // puzzle_numbers[i] must be 0 or 1
+        // puzzle_enforce[i] must be 0 or 1
         generate_boolean_r1cs_constraint<FieldT>(this->pb, puzzle_enforce[i], "enforcement bitness");
 
-        // puzzle_numbers[i] must be 1 if the puzzle value is nonzero
+        // puzzle_enforce[i] must be 1 if puzzle_numbers[i] is nonzero
         this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(puzzle_numbers[i], 1 - puzzle_enforce[i], 0), "enforcement");
         
         // solution_numbers[i] must equal puzzle_numbers[i] if puzzle_enforce[i] is 1
