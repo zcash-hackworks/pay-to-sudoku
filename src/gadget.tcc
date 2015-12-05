@@ -11,6 +11,9 @@ l_gadget<FieldT>::l_gadget(protoboard<FieldT> &pb, unsigned int n) :
         this->pb.set_input_sizes(input_size_in_field_elements);
     }
 
+    puzzle_enforce.allocate(pb, n*n, "puzzle solution subset enforcement");
+    puzzle_enforce_as.reserve(n*n);
+
     puzzle_values.resize(n*n);
     solution_values.resize(n*n);
 
@@ -27,6 +30,35 @@ l_gadget<FieldT>::l_gadget(protoboard<FieldT> &pb, unsigned int n) :
 template<typename FieldT>
 void l_gadget<FieldT>::generate_r1cs_constraints()
 {
+    std::vector<linear_combination<FieldT>> puzzle_numbers;
+    std::vector<linear_combination<FieldT>> solution_numbers;
+
+    for (unsigned int i = 0; i < (dimension*dimension); i++) {
+        for (unsigned int j = 0; j < 8; j++) {
+            // ensure bitness
+            generate_boolean_r1cs_constraint<FieldT>(this->pb, solution_values[i][j], "solution_bitness");
+        }
+
+        puzzle_numbers.push_back(pb_packing_sum<FieldT>(pb_variable_array<FieldT>(puzzle_values[i].rbegin(), puzzle_values[i].rend())));
+        solution_numbers.push_back(pb_packing_sum<FieldT>(pb_variable_array<FieldT>(solution_values[i].rbegin(), solution_values[i].rend())));
+
+        // enforce solution is subset of puzzle
+
+        // puzzle_numbers[i] must be 0 or 1
+        generate_boolean_r1cs_constraint<FieldT>(this->pb, puzzle_enforce[i], "enforcement bitness");
+
+        // puzzle_numbers[i] must be 1 if the puzzle value is nonzero
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(puzzle_numbers[i], 1 - puzzle_enforce[i], 0), FMT(this->annotation_prefix, " balance"));
+        
+        // we must be able to construct an inv such that
+        // solution_numbers[i] * puzzle_enforce[i] = inv
+        // puzzle_numbers[i] * puzzle_enforce[i] = inv
+        // to enforce that the solutions are equal if puzzle_enforce[i] is 1
+        //    or that they can be unequal if puzzle_enforce[i] is 0
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(solution_numbers[i], puzzle_enforce[i], puzzle_enforce_as[i]), FMT(this->annotation_prefix, " balance"));
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(puzzle_numbers[i], puzzle_enforce[i], puzzle_enforce_as[i]), FMT(this->annotation_prefix, " balance"));
+    }
+
     unpack_inputs->generate_r1cs_constraints(true);
 }
 
@@ -42,6 +74,24 @@ void l_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzz
         assert(input_solution_values[i].size() == 8);
         puzzle_values[i].fill_with_bits(this->pb, input_puzzle_values[i]);
         solution_values[i].fill_with_bits(this->pb, input_solution_values[i]);
+
+        // if any of the bits of the input puzzle value is nonzero,
+        // we must enforce it
+        bool enforce = false;
+        for (unsigned int j = 0; j < 8; j++) {
+            if (input_puzzle_values[i][j]) {
+                enforce = true;
+                break;
+            }
+        }
+
+        this->pb.val(puzzle_enforce[i]) = enforce ? FieldT::one() : FieldT::zero();
+
+        pb_linear_combination<FieldT> enforce_as;
+        enforce_as.assign(this->pb, pb_packing_sum<FieldT>(pb_variable_array<FieldT>(solution_values[i].rbegin(), solution_values[i].rend())) * this->pb.val(puzzle_enforce[i]));
+        enforce_as.evaluate(this->pb);
+
+        puzzle_enforce_as.emplace_back(enforce_as);
     }
 
     unpack_inputs->generate_r1cs_witness_from_bits();

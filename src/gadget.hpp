@@ -15,6 +15,9 @@ public:
     std::vector<pb_variable_array<FieldT>> puzzle_values;
     std::vector<pb_variable_array<FieldT>> solution_values;
 
+    pb_variable_array<FieldT> puzzle_enforce;
+    pb_linear_combination_array<FieldT> puzzle_enforce_as;
+
 
     l_gadget(protoboard<FieldT> &pb, unsigned int n);
     void generate_r1cs_constraints();
