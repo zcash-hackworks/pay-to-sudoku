@@ -40,7 +40,9 @@ void sodoku_encryption_key<FieldT>::generate_r1cs_constraints()
 {
     unsigned int num_key_digests = div_ceil(dimension * dimension * 8, 256);
 
-    padding_var->generate_r1cs_constraints(); // TODO: probably unnecessary
+    // This isn't necessary because bitness of the padding is effectively
+    // guaranteed by the constant constraints we place.
+    //padding_var->generate_r1cs_constraints();
 
     for (unsigned int i = 0; i < 256; i++) {
         this->pb.add_r1cs_constraint(
