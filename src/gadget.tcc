@@ -1,4 +1,35 @@
 template<typename FieldT>
+sodoku_cell_gadget<FieldT>::sodoku_cell_gadget(protoboard<FieldT> &pb,
+                                               unsigned int dimension,
+                                               pb_linear_combination<FieldT> &number
+                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sodoku_cell_gadget")),
+                                                   number(number), dimension(dimension)
+{
+    flags.allocate(pb, dimension, "flags for each possible number");
+}
+
+template<typename FieldT>
+void sodoku_cell_gadget<FieldT>::generate_r1cs_constraints()
+{
+    for (unsigned int i = 0; i < dimension; i++) {
+        generate_boolean_r1cs_constraint<FieldT>(this->pb, flags[i], "enforcement bitness");
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(number - (i+1), flags[i], 0), "enforcement");
+    }
+}
+
+template<typename FieldT>
+void sodoku_cell_gadget<FieldT>::generate_r1cs_witness()
+{
+    for (unsigned int i = 0; i < dimension; i++) {
+        if (this->pb.lc_val(number) == (i+1)) {
+            this->pb.val(flags[i]) = FieldT::one();
+        } else {
+            this->pb.val(flags[i]) = FieldT::zero();
+        }
+    }
+}
+
+template<typename FieldT>
 l_gadget<FieldT>::l_gadget(protoboard<FieldT> &pb, unsigned int n) :
         gadget<FieldT>(pb, FMT(annotation_prefix, " l_gadget"))
 {
@@ -17,6 +48,7 @@ l_gadget<FieldT>::l_gadget(protoboard<FieldT> &pb, unsigned int n) :
     puzzle_numbers.resize(dimension*dimension);
     solution_values.resize(dimension*dimension);
     solution_numbers.resize(dimension*dimension);
+    cells.resize(dimension*dimension);
 
     for (unsigned int i = 0; i < (dimension*dimension); i++) {
         puzzle_values[i].allocate(pb, 8, "puzzle_values[i]");
@@ -26,6 +58,8 @@ l_gadget<FieldT>::l_gadget(protoboard<FieldT> &pb, unsigned int n) :
         solution_numbers[i].assign(pb, pb_packing_sum<FieldT>(pb_variable_array<FieldT>(solution_values[i].rbegin(), solution_values[i].rend())));
 
         input_as_bits.insert(input_as_bits.end(), puzzle_values[i].begin(), puzzle_values[i].end());
+
+        cells[i].reset(new sodoku_cell_gadget<FieldT>(this->pb, dimension, solution_numbers[i]));
     }
 
     assert(input_as_bits.size() == input_size_in_bits);
@@ -51,6 +85,9 @@ void l_gadget<FieldT>::generate_r1cs_constraints()
         
         // solution_numbers[i] must equal puzzle_numbers[i] if puzzle_enforce[i] is 1
         this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(puzzle_enforce[i], (solution_numbers[i] - puzzle_numbers[i]), 0), "enforcement equality");
+    
+        // enforce cell constraints
+        cells[i]->generate_r1cs_constraints();
     }
 
     unpack_inputs->generate_r1cs_constraints(true);
@@ -83,6 +120,8 @@ void l_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzz
         }
 
         this->pb.val(puzzle_enforce[i]) = enforce ? FieldT::one() : FieldT::zero();
+
+        cells[i]->generate_r1cs_witness();
     }
 
     unpack_inputs->generate_r1cs_witness_from_bits();
