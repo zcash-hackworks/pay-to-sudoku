@@ -267,11 +267,16 @@ void sodoku_gadget<FieldT>::generate_r1cs_constraints()
 
 template<typename FieldT>
 void sodoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzzle_values,
-                                             std::vector<bit_vector> &input_solution_values
+                                             std::vector<bit_vector> &input_solution_values,
+                                             bit_vector &input_seed_key
     )
 {
     assert(input_puzzle_values.size() == dimension*dimension);
     assert(input_solution_values.size() == dimension*dimension);
+    assert(input_seed_key.size() == 256);
+
+    seed_key->bits.fill_with_bits(this->pb, input_seed_key);
+
     for (unsigned int i = 0; i < dimension*dimension; i++) {
         assert(input_puzzle_values[i].size() == 8);
         assert(input_solution_values[i].size() == 8);

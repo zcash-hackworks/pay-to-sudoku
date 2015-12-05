@@ -99,7 +99,8 @@ public:
     sodoku_gadget(protoboard<FieldT> &pb, unsigned int n);
     void generate_r1cs_constraints();
     void generate_r1cs_witness(std::vector<bit_vector> &puzzle_values,
-                               std::vector<bit_vector> &input_solution_values);
+                               std::vector<bit_vector> &input_solution_values,
+                               bit_vector &input_seed_key);
 };
 
 template<typename FieldT>

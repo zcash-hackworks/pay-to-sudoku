@@ -157,7 +157,10 @@ bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair,
     std::vector<uint8_t> puzzle,
     std::vector<uint8_t> solution
     ) {
-    auto proof = generate_proof<default_r1cs_ppzksnark_pp>(keypair.pk, puzzle, solution);
+
+    std::vector<unsigned char> key(32, 0);
+
+    auto proof = generate_proof<default_r1cs_ppzksnark_pp>(keypair.pk, puzzle, solution, key);
 
     if (!proof) {
         return false;
