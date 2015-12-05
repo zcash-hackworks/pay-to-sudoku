@@ -13,7 +13,8 @@ r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair();
 
 template<typename ppzksnark_ppT>
 boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
-                                                                   std::vector<uint8_t> &puzzle
+                                                                   std::vector<uint8_t> &puzzle,
+                                                                   std::vector<uint8_t> &solution
                                                                    );
 
 template<typename ppzksnark_ppT>

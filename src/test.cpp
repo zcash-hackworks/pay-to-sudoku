@@ -20,16 +20,17 @@ int main()
 
 bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair
     ) {
-    vector<uint8_t> v(81, 0);
+    vector<uint8_t> puzzle(81, 0);
+    vector<uint8_t> solution(81, 1);
 
     cout << "Trying to generate proof..." << endl;
-    auto proof = generate_proof<default_r1cs_ppzksnark_pp>(keypair.pk, v);
+    auto proof = generate_proof<default_r1cs_ppzksnark_pp>(keypair.pk, puzzle, solution);
     cout << "Proof generated!" << endl;
 
     if (!proof) {
         return false;
     } else {
-        assert(verify_proof(keypair.vk, *proof, v));
+        assert(verify_proof(keypair.vk, *proof, puzzle));
         return true;
     }
 }

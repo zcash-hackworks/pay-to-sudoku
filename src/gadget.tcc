@@ -12,9 +12,11 @@ l_gadget<FieldT>::l_gadget(protoboard<FieldT> &pb, unsigned int n) :
     }
 
     puzzle_values.resize(n*n);
+    solution_values.resize(n*n);
 
     for (unsigned int i = 0; i < (n*n); i++) {
-        puzzle_values[i].allocate(pb, 8, "puzzle_value[i]");
+        puzzle_values[i].allocate(pb, 8, "puzzle_values[i]");
+        solution_values[i].allocate(pb, 8, "solution_values[i]");
         input_as_bits.insert(input_as_bits.end(), puzzle_values[i].begin(), puzzle_values[i].end());
     }
 
@@ -29,12 +31,17 @@ void l_gadget<FieldT>::generate_r1cs_constraints()
 }
 
 template<typename FieldT>
-void l_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzzle_values)
+void l_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzzle_values,
+                                             std::vector<bit_vector> &input_solution_values
+    )
 {
     assert(input_puzzle_values.size() == dimension*dimension);
+    assert(input_solution_values.size() == dimension*dimension);
     for (unsigned int i = 0; i < dimension*dimension; i++) {
         assert(input_puzzle_values[i].size() == 8);
+        assert(input_solution_values[i].size() == 8);
         puzzle_values[i].fill_with_bits(this->pb, input_puzzle_values[i]);
+        solution_values[i].fill_with_bits(this->pb, input_solution_values[i]);
     }
 
     unpack_inputs->generate_r1cs_witness_from_bits();

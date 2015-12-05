@@ -13,11 +13,13 @@ public:
     std::shared_ptr<multipacking_gadget<FieldT> > unpack_inputs; /* multipacking gadget */
 
     std::vector<pb_variable_array<FieldT>> puzzle_values;
+    std::vector<pb_variable_array<FieldT>> solution_values;
 
 
     l_gadget(protoboard<FieldT> &pb, unsigned int n);
     void generate_r1cs_constraints();
-    void generate_r1cs_witness(std::vector<bit_vector> &puzzle_values);
+    void generate_r1cs_witness(std::vector<bit_vector> &puzzle_values,
+                               std::vector<bit_vector> &input_solution_values);
 };
 
 template<typename FieldT>

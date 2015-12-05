@@ -40,7 +40,8 @@ r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair()
 
 template<typename ppzksnark_ppT>
 boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
-                                                                   vector<uint8_t> &puzzle
+                                                                   vector<uint8_t> &puzzle,
+                                                                   vector<uint8_t> &solution
                                                                    )
 {
     typedef Fr<ppzksnark_ppT> FieldT;
@@ -50,8 +51,9 @@ boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksna
     g.generate_r1cs_constraints();
 
     auto new_puzzle = convertPuzzleToBool(puzzle);
+    auto new_solution = convertPuzzleToBool(solution);
 
-    g.generate_r1cs_witness(new_puzzle);
+    g.generate_r1cs_witness(new_puzzle, new_solution);
 
     if (!pb.is_satisfied()) {
         return boost::none;
