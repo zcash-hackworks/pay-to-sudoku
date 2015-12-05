@@ -16,6 +16,7 @@ public:
     std::vector<std::shared_ptr<digest_variable<FieldT>>> key; // dimension*dimension*8 bit key
     std::vector<pb_variable_array<FieldT>> salts;
     std::vector<std::shared_ptr<block_variable<FieldT>>> key_blocks;
+    std::vector<std::shared_ptr<sha256_compression_function_gadget<FieldT>>> key_sha;
 
     sodoku_encryption_key(protoboard<FieldT> &pb,
                        unsigned int dimension,

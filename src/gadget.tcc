@@ -12,18 +12,26 @@ sodoku_encryption_key<FieldT>::sodoku_encryption_key(protoboard<FieldT> &pb,
 
     key.resize(num_key_digests);
     salts.resize(num_key_digests);
-    //key_blocks.resize(num_key_digests);
+    key_blocks.resize(num_key_digests);
+    key_sha.resize(num_key_digests);
+
+    // IV for SHA256
+    pb_linear_combination_array<FieldT> IV = SHA256_default_IV(pb);
 
     for (unsigned int i = 0; i < num_key_digests; i++) {
         key[i].reset(new digest_variable<FieldT>(pb, 256, "key[i]"));
         salts[i].allocate(pb, 8, "key salt");
-
-        /*
         key_blocks[i].reset(new block_variable<FieldT>(pb, {
-            seed_key->bits,
+            seed_key,
+            salts[i],
             padding_var->bits
-        }, "h_r1_block"));
-        */
+        }, "key_blocks[i]"));
+
+        key_sha[i].reset(new sha256_compression_function_gadget<FieldT>(pb,
+                                                              IV,
+                                                              key_blocks[i]->bits,
+                                                              *key[i],
+                                                              "hash"));
     }
 }
 
@@ -56,6 +64,8 @@ void sodoku_encryption_key<FieldT>::generate_r1cs_constraints()
                     { s[j] ? 1 : 0 }),
                 "constrain_salts");
         }
+
+        key_sha[i]->generate_r1cs_constraints();
     }
 }
 
@@ -74,6 +84,8 @@ void sodoku_encryption_key<FieldT>::generate_r1cs_witness()
         for (unsigned int j = 0; j < 8; j++) {
             this->pb.val(salts[i][j]) = s[j] ? 1 : 0;
         }
+
+        key_sha[i]->generate_r1cs_witness();
     }
 }
 
