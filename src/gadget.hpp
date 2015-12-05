@@ -26,7 +26,7 @@ public:
 };
 
 template<typename FieldT>
-class l_gadget : public gadget<FieldT> {
+class sodoku_gadget : public gadget<FieldT> {
 public:
     unsigned int dimension;
 
@@ -45,13 +45,13 @@ public:
     pb_variable_array<FieldT> puzzle_enforce;
 
 
-    l_gadget(protoboard<FieldT> &pb, unsigned int n);
+    sodoku_gadget(protoboard<FieldT> &pb, unsigned int n);
     void generate_r1cs_constraints();
     void generate_r1cs_witness(std::vector<bit_vector> &puzzle_values,
                                std::vector<bit_vector> &input_solution_values);
 };
 
 template<typename FieldT>
-r1cs_primary_input<FieldT> l_input_map(std::vector<bit_vector> &puzzle_values);
+r1cs_primary_input<FieldT> sodoku_input_map(std::vector<bit_vector> &puzzle_values);
 
 #include "gadget.tcc"

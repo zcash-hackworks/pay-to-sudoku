@@ -30,7 +30,7 @@ void sodoku_cell_gadget<FieldT>::generate_r1cs_witness()
 }
 
 template<typename FieldT>
-l_gadget<FieldT>::l_gadget(protoboard<FieldT> &pb, unsigned int n) :
+sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
         gadget<FieldT>(pb, FMT(annotation_prefix, " l_gadget"))
 {
     dimension = n * n;
@@ -67,7 +67,7 @@ l_gadget<FieldT>::l_gadget(protoboard<FieldT> &pb, unsigned int n) :
 }
 
 template<typename FieldT>
-void l_gadget<FieldT>::generate_r1cs_constraints()
+void sodoku_gadget<FieldT>::generate_r1cs_constraints()
 {
     for (unsigned int i = 0; i < (dimension*dimension); i++) {
         for (unsigned int j = 0; j < 8; j++) {
@@ -94,7 +94,7 @@ void l_gadget<FieldT>::generate_r1cs_constraints()
 }
 
 template<typename FieldT>
-void l_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzzle_values,
+void sodoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzzle_values,
                                              std::vector<bit_vector> &input_solution_values
     )
 {
@@ -128,7 +128,7 @@ void l_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzz
 }
 
 template<typename FieldT>
-r1cs_primary_input<FieldT> l_input_map(unsigned int n, std::vector<bit_vector> &input_puzzle_values)
+r1cs_primary_input<FieldT> sodoku_input_map(unsigned int n, std::vector<bit_vector> &input_puzzle_values)
 {
     unsigned int dimension = n*n;
     assert(input_puzzle_values.size() == dimension*dimension);
