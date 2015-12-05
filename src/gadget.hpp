@@ -65,6 +65,7 @@ public:
 
     std::vector<std::shared_ptr<sodoku_closure_gadget<FieldT>>> closure_rows;
     std::vector<std::shared_ptr<sodoku_closure_gadget<FieldT>>> closure_cols;
+    std::vector<std::shared_ptr<sodoku_closure_gadget<FieldT>>> closure_groups;
 
     pb_variable_array<FieldT> puzzle_enforce;
 

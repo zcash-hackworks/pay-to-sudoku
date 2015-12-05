@@ -99,6 +99,7 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
 
     closure_rows.resize(dimension);
     closure_cols.resize(dimension);
+    closure_groups.resize(dimension);
 
     for (unsigned int i = 0; i < dimension; i++) {
         std::vector<pb_variable_array<FieldT>> row_flags;
@@ -110,6 +111,20 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
 
         closure_rows[i].reset(new sodoku_closure_gadget<FieldT>(this->pb, dimension, row_flags));
         closure_cols[i].reset(new sodoku_closure_gadget<FieldT>(this->pb, dimension, col_flags));
+    }
+
+    for (unsigned int gi = 0; gi < dimension; gi++) {
+        std::vector<pb_variable_array<FieldT>> group_flags;
+        unsigned int start_row = (gi / n) * n;
+        unsigned int start_col = (gi % n) * n;
+
+        for (unsigned int i = start_row; i < (start_row + n); i++) {
+            for (unsigned int j = start_col; j < (start_col + n); j++) {
+                group_flags.push_back(cells[i*dimension + j]->flags);
+            }
+        }
+
+        closure_groups[gi].reset(new sodoku_closure_gadget<FieldT>(this->pb, dimension, group_flags));
     }
 
     assert(input_as_bits.size() == input_size_in_bits);
@@ -143,6 +158,7 @@ void sodoku_gadget<FieldT>::generate_r1cs_constraints()
     for (unsigned int i = 0; i < dimension; i++) {
         closure_rows[i]->generate_r1cs_constraints();
         closure_cols[i]->generate_r1cs_constraints();
+        closure_groups[i]->generate_r1cs_constraints();
     }
 
     unpack_inputs->generate_r1cs_constraints(true);
