@@ -6,7 +6,16 @@
 
 using namespace libsnark;
 
-std::vector<std::vector<bool>> convertPuzzleToBool(std::vector<uint8_t>);
+std::vector<bool> convertIntToVector(uint8_t val) {
+  std::vector<bool> ret;
+
+  for(unsigned int i = 0; i < sizeof(val) * 8; ++i, val >>= 1) {
+    ret.push_back(val & 0x01);
+  }
+
+  reverse(ret.begin(), ret.end());
+  return ret;
+}
 
 template<typename ppzksnark_ppT>
 r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair();

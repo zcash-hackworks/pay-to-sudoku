@@ -2,17 +2,6 @@
 
 using namespace std;
 
-std::vector<bool> convertIntToVector(uint8_t val) {
-  std::vector<bool> ret;
-
-  for(unsigned int i = 0; i < sizeof(val) * 8; ++i, val >>= 1) {
-    ret.push_back(val & 0x01);
-  }
-
-  reverse(ret.begin(), ret.end());
-  return ret;
-}
-
 std::vector<std::vector<bool>> convertPuzzleToBool(std::vector<uint8_t> puzzle) {
     std::vector<vector<bool>> new_puzzle;
 

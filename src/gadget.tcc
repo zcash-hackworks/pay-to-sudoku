@@ -1,4 +1,32 @@
 template<typename FieldT>
+sodoku_encryption_key<FieldT>::sodoku_encryption_key(protoboard<FieldT> &pb,
+                                               unsigned int dimension,
+                                               pb_variable_array<FieldT> &seed_key
+                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sodoku_closure_gadget")),
+                                                   seed_key(seed_key), dimension(dimension)
+{
+    unsigned int num_key_digests = div_ceil(dimension * dimension * 8, 256);
+
+    key.resize(num_key_digests);
+
+    for (unsigned int i = 0; i < num_key_digests; i++) {
+        key[i].reset(new digest_variable<FieldT>(pb, 256, "key[i]"));
+    }
+}
+
+template<typename FieldT>
+void sodoku_encryption_key<FieldT>::generate_r1cs_constraints()
+{
+    
+}
+
+template<typename FieldT>
+void sodoku_encryption_key<FieldT>::generate_r1cs_witness()
+{
+    
+}
+
+template<typename FieldT>
 sodoku_closure_gadget<FieldT>::sodoku_closure_gadget(protoboard<FieldT> &pb,
                                                unsigned int dimension,
                                                std::vector<pb_variable_array<FieldT>> &flags
@@ -127,6 +155,9 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
         closure_groups[gi].reset(new sodoku_closure_gadget<FieldT>(this->pb, dimension, group_flags));
     }
 
+    seed_key.reset(new digest_variable<FieldT>(pb, 256, "seed_key"));
+    key.reset(new sodoku_encryption_key<FieldT>(pb, dimension, seed_key->bits));
+
     assert(input_as_bits.size() == input_size_in_bits);
     unpack_inputs.reset(new multipacking_gadget<FieldT>(this->pb, input_as_bits, input_as_field_elements, FieldT::capacity(), FMT(this->annotation_prefix, " unpack_inputs")));
 }
@@ -161,6 +192,9 @@ void sodoku_gadget<FieldT>::generate_r1cs_constraints()
         closure_groups[i]->generate_r1cs_constraints();
     }
 
+    seed_key->generate_r1cs_constraints();
+    key->generate_r1cs_constraints();
+
     unpack_inputs->generate_r1cs_constraints(true);
 }
 
@@ -194,6 +228,8 @@ void sodoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input
 
         cells[i]->generate_r1cs_witness();
     }
+
+    key->generate_r1cs_witness();
 
     unpack_inputs->generate_r1cs_witness_from_bits();
 }

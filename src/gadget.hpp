@@ -4,9 +4,25 @@
 using namespace libsnark;
 
 template<typename FieldT>
+class sodoku_encryption_key : public gadget<FieldT> {
+public:
+    pb_variable_array<FieldT> seed_key; // 256 bit key
+    unsigned int dimension;
+
+    std::vector<std::shared_ptr<digest_variable<FieldT>>> key; // dimension*dimension*8 bit key
+
+    sodoku_encryption_key(protoboard<FieldT> &pb,
+                       unsigned int dimension,
+                       pb_variable_array<FieldT> &seed_key
+                       );
+    void generate_r1cs_constraints();
+    void generate_r1cs_witness();
+};
+
+template<typename FieldT>
 class sodoku_cell_gadget : public gadget<FieldT> {
 public:
-    pb_linear_combination<FieldT> &number;
+    pb_linear_combination<FieldT> number;
     unsigned int dimension;
 
     /*
@@ -66,6 +82,9 @@ public:
     std::vector<std::shared_ptr<sodoku_closure_gadget<FieldT>>> closure_rows;
     std::vector<std::shared_ptr<sodoku_closure_gadget<FieldT>>> closure_cols;
     std::vector<std::shared_ptr<sodoku_closure_gadget<FieldT>>> closure_groups;
+
+    std::shared_ptr<digest_variable<FieldT>> seed_key;
+    std::shared_ptr<sodoku_encryption_key<FieldT>> key;
 
     pb_variable_array<FieldT> puzzle_enforce;
 
