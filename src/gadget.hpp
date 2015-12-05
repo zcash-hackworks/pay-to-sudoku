@@ -14,6 +14,7 @@ public:
     std::shared_ptr<digest_variable<FieldT>> padding_var;
 
     std::vector<std::shared_ptr<digest_variable<FieldT>>> key; // dimension*dimension*8 bit key
+    std::vector<pb_variable_array<FieldT>> salts;
     std::vector<std::shared_ptr<block_variable<FieldT>>> key_blocks;
 
     sodoku_encryption_key(protoboard<FieldT> &pb,

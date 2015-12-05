@@ -11,10 +11,13 @@ sodoku_encryption_key<FieldT>::sodoku_encryption_key(protoboard<FieldT> &pb,
     padding_var.reset(new digest_variable<FieldT>(pb, 256, "padding"));
 
     key.resize(num_key_digests);
+    salts.resize(num_key_digests);
     //key_blocks.resize(num_key_digests);
 
     for (unsigned int i = 0; i < num_key_digests; i++) {
         key[i].reset(new digest_variable<FieldT>(pb, 256, "key[i]"));
+        salts[i].allocate(pb, 8, "key salt");
+
         /*
         key_blocks[i].reset(new block_variable<FieldT>(pb, {
             seed_key->bits,
@@ -42,15 +45,36 @@ void sodoku_encryption_key<FieldT>::generate_r1cs_constraints()
 
     for (unsigned int i = 0; i < num_key_digests; i++) {
         key[i]->generate_r1cs_constraints();
+
+        auto s = convertIntToVector(i);
+
+        for (unsigned int j = 0; j < 8; j++) {
+            this->pb.add_r1cs_constraint(
+                r1cs_constraint<FieldT>(
+                    { salts[i][j] },
+                    { 1 },
+                    { s[j] ? 1 : 0 }),
+                "constrain_salts");
+        }
     }
 }
 
 template<typename FieldT>
 void sodoku_encryption_key<FieldT>::generate_r1cs_witness()
 {
+    unsigned int num_key_digests = div_ceil(dimension * dimension * 8, 256);
+
     for (unsigned int i = 0; i < 256; i++) {
         this->pb.val(padding_var->bits[i]) = sha256_padding[i] ? 1 : 0;
-    }   
+    }
+
+    for (unsigned int i = 0; i < num_key_digests; i++) {
+        auto s = convertIntToVector(i);
+
+        for (unsigned int j = 0; j < 8; j++) {
+            this->pb.val(salts[i][j]) = s[j] ? 1 : 0;
+        }
+    }
 }
 
 template<typename FieldT>
