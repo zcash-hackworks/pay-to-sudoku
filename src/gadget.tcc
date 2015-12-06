@@ -230,20 +230,16 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
     pb_variable_array<FieldT> seed_key_cropped(seed_key->bits.begin(), seed_key->bits.begin() + (256 - 8));
     key.reset(new sodoku_encryption_key<FieldT>(pb, dimension, seed_key_cropped));
 
-    {
-        /*
-        auto block = new block_variable<FieldT>(pb, {
-            h_seed_key->bits,
-            key->padding_var->bits
-        }, "key_blocks[i]");
+    h_k_block.reset(new block_variable<FieldT>(pb, {
+        seed_key->bits,
+        key->padding_var->bits
+    }, "key_blocks[i]"));
 
-        h_k_sha.reset(new sha256_compression_function_gadget<FieldT>(pb,
-                                                              key->IV,
-                                                              block->bits,
-                                                              *h_seed_key,
-                                                              "H(K)"));
-        */
-    }
+    h_k_sha.reset(new sha256_compression_function_gadget<FieldT>(pb,
+                                                          key->IV,
+                                                          h_k_block->bits,
+                                                          *h_seed_key,
+                                                          "H(K)"));
 
     assert(input_as_bits.size() == input_size_in_bits);
     unpack_inputs.reset(new multipacking_gadget<FieldT>(this->pb, input_as_bits, input_as_field_elements, FieldT::capacity(), FMT(this->annotation_prefix, " unpack_inputs")));
@@ -282,9 +278,10 @@ void sodoku_gadget<FieldT>::generate_r1cs_constraints()
     seed_key->generate_r1cs_constraints();
     h_seed_key->generate_r1cs_constraints();
     key->generate_r1cs_constraints();
-    //h_k_sha->generate_r1cs_constraints();
 
     unpack_inputs->generate_r1cs_constraints(true);
+
+    h_k_sha->generate_r1cs_constraints();
 }
 
 template<typename FieldT>
@@ -325,11 +322,12 @@ void sodoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input
     }
 
     key->generate_r1cs_witness();
-    //h_k_sha->generate_r1cs_witness();
 
-    h_seed_key->bits.fill_with_bits(this->pb, hash_of_input_seed_key);
+    h_k_sha->generate_r1cs_witness();
 
     unpack_inputs->generate_r1cs_witness_from_bits();
+
+    h_seed_key->bits.fill_with_bits(this->pb, hash_of_input_seed_key);
 }
 
 template<typename FieldT>

@@ -55,15 +55,15 @@ template<typename ppzksnark_ppT>
 boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
                                                                    std::vector<uint8_t> &puzzle,
                                                                    std::vector<uint8_t> &solution,
-                                                                   std::vector<unsigned char> &key,
-                                                                   std::vector<unsigned char> &h_of_key
+                                                                   std::vector<bool> &key,
+                                                                   std::vector<bool> &h_of_key
                                                                    );
 
 template<typename ppzksnark_ppT>
 bool verify_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_key,
                   r1cs_ppzksnark_proof<ppzksnark_ppT> proof,
                   std::vector<uint8_t> &puzzle,
-                  std::vector<unsigned char> &h_of_key
+                  std::vector<bool> &h_of_key
                  );
 
 #include "snark.tcc"

@@ -94,6 +94,7 @@ public:
     std::shared_ptr<digest_variable<FieldT>> seed_key;
     std::shared_ptr<digest_variable<FieldT>> h_seed_key;
 
+    std::shared_ptr<block_variable<FieldT>> h_k_block;
     std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_k_sha;
     std::shared_ptr<sodoku_encryption_key<FieldT>> key;
 
