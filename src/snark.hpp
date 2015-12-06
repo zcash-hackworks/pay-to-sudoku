@@ -41,12 +41,31 @@ void convertBytesToVector(const unsigned char* bytes, std::vector<bool>& v) {
     }
 }
 
+void convertVectorToBytes(const std::vector<bool>& v, unsigned char* bytes) {
+    int numBytes = v.size() / 8;
+    unsigned char c = '\0';
+
+    for(int i = 0; i < numBytes; i++) {
+        c = '\0';
+        for(int j = 0; j < 8; j++) {
+            if(j == 7)
+                c = ((c | v.at((i*8)+j)));
+            else
+                c = ((c | v.at((i*8)+j)) << 1);
+        }
+        bytes[i] = c;
+    }
+}
+
 void convertBytesVectorToVector(const std::vector<unsigned char>& bytes, std::vector<bool>& v) {
       v.resize(bytes.size() * 8);
     unsigned char bytesArr[bytes.size()];
     convertBytesVectorToBytes(bytes, bytesArr);
     convertBytesToVector(bytesArr, v);
 }
+
+std::vector<std::vector<bool>> xorSolution(const std::vector<std::vector<bool>> &solution, const std::vector<bool> &key);
+std::vector<std::vector<bool>> convertPuzzleToBool(std::vector<uint8_t> puzzle);
 
 template<typename ppzksnark_ppT>
 r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair();

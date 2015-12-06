@@ -3,7 +3,6 @@
 
 #include "snark.hpp"
 #include "test.h"
-#include "sha256.h"
 
 using namespace libsnark;
 using namespace std;
