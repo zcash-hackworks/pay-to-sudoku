@@ -38,15 +38,15 @@ std::vector<std::vector<bool>> xorSolution(const std::vector<std::vector<bool>> 
       assert(finished_key.size() == 256);
 
       // convert it into a plaintext that sha256 likes
-      unsigned char finished_key_plaintext[256];
+      unsigned char finished_key_plaintext[32];
       convertVectorToBytes(finished_key, finished_key_plaintext);
 
       // "blob" of randomness from this makeshift PRNG
-      unsigned char blob[256];
+      unsigned char blob[32];
 
       SHA256_CTX ctx;
       sha256_init(&ctx);
-      sha256_update(&ctx, finished_key_plaintext, 256);
+      sha256_update(&ctx, finished_key_plaintext, 32);
       sha256_final(&ctx, blob);
 
       // convert blob into bool vector

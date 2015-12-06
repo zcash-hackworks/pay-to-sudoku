@@ -295,8 +295,14 @@ void sodoku_gadget<FieldT>::generate_r1cs_constraints()
 
     for (unsigned int x = 0; x < dimension*dimension; x++) {
         for (unsigned int y = 0; y < 8; y++) {
-            //pb_variable a = key->key[x]->bits[y];
-
+            // This is the constraint that encrypted solution = solution ^ key.
+            this->pb.add_r1cs_constraint(
+                r1cs_constraint<FieldT>(
+                    { solution_values[x][y] * 2 }, // 2*b
+                    { key->key[(sha_i / 256)]->bits[(sha_i % 256)] }, // c
+                    { solution_values[x][y], key->key[(sha_i / 256)]->bits[(sha_i % 256)], encrypted_solution[x][y] * (-1) }), // b+c - a
+                "xor");
+            
             sha_i++;
         }
     }
