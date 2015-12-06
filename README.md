@@ -1,4 +1,4 @@
 todo:
 
-* make input to circuit an encryption of the solution
 * write better tests
+* write interface for interacting with the snark
