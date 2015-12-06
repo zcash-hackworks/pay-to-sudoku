@@ -166,7 +166,10 @@ bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair,
     if (!proof) {
         return false;
     } else {
-        assert(verify_proof(keypair.vk, *proof, puzzle, h_of_key));
+        auto actual_proof = std::get<0>(*proof);
+        auto encrypted_solution = std::get<1>(*proof);
+
+        assert(verify_proof(keypair.vk, actual_proof, puzzle, h_of_key, encrypted_solution));
         return true;
     }
 }

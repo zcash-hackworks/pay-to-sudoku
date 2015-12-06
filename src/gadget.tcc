@@ -166,7 +166,7 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
 
     assert(dimension < 256); // any more will overflow the 8 bit storage
 
-    const size_t input_size_in_bits = (dimension * dimension * 8) + /* H(K) */ 256;
+    const size_t input_size_in_bits = (2 * (dimension * dimension * 8)) + /* H(K) */ 256;
     {
         const size_t input_size_in_field_elements = div_ceil(input_size_in_bits, FieldT::capacity());
         input_as_field_elements.allocate(pb, input_size_in_field_elements, "input_as_field_elements");
@@ -179,6 +179,7 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
     puzzle_numbers.resize(dimension*dimension);
     solution_values.resize(dimension*dimension);
     solution_numbers.resize(dimension*dimension);
+    encrypted_solution.resize(dimension*dimension);
     cells.resize(dimension*dimension);
 
     for (unsigned int i = 0; i < (dimension*dimension); i++) {
@@ -191,6 +192,12 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
         input_as_bits.insert(input_as_bits.end(), puzzle_values[i].begin(), puzzle_values[i].end());
 
         cells[i].reset(new sodoku_cell_gadget<FieldT>(this->pb, dimension, solution_numbers[i]));
+    }
+
+    for (unsigned int i = 0; i < (dimension*dimension); i++) {
+        encrypted_solution[i].allocate(pb, 8, "encrypted_solution[i]");
+
+        input_as_bits.insert(input_as_bits.end(), encrypted_solution[i].begin(), encrypted_solution[i].end());
     }
 
     closure_rows.resize(dimension);
@@ -282,17 +289,30 @@ void sodoku_gadget<FieldT>::generate_r1cs_constraints()
     unpack_inputs->generate_r1cs_constraints(true);
 
     h_k_sha->generate_r1cs_constraints();
+
+    // encrypted solution check
+    unsigned int sha_i = 0;
+
+    for (unsigned int x = 0; x < dimension*dimension; x++) {
+        for (unsigned int y = 0; y < 8; y++) {
+            //pb_variable a = key->key[x]->bits[y];
+
+            sha_i++;
+        }
+    }
 }
 
 template<typename FieldT>
 void sodoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzzle_values,
                                              std::vector<bit_vector> &input_solution_values,
                                              bit_vector &input_seed_key,
-                                             bit_vector &hash_of_input_seed_key
+                                             bit_vector &hash_of_input_seed_key,
+                                             std::vector<bit_vector> &input_encrypted_solution
     )
 {
     assert(input_puzzle_values.size() == dimension*dimension);
     assert(input_solution_values.size() == dimension*dimension);
+    assert(input_encrypted_solution.size() == dimension*dimension);
     assert(input_seed_key.size() == 256);
 
     seed_key->bits.fill_with_bits(this->pb, input_seed_key);
@@ -300,8 +320,10 @@ void sodoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input
     for (unsigned int i = 0; i < dimension*dimension; i++) {
         assert(input_puzzle_values[i].size() == 8);
         assert(input_solution_values[i].size() == 8);
+        assert(input_encrypted_solution[i].size() == 8);
         puzzle_values[i].fill_with_bits(this->pb, input_puzzle_values[i]);
         solution_values[i].fill_with_bits(this->pb, input_solution_values[i]);
+        encrypted_solution[i].fill_with_bits(this->pb, input_encrypted_solution[i]);
 
         puzzle_numbers[i].evaluate(this->pb);
         solution_numbers[i].evaluate(this->pb);
@@ -333,16 +355,22 @@ void sodoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input
 template<typename FieldT>
 r1cs_primary_input<FieldT> sodoku_input_map(unsigned int n,
                                             std::vector<bit_vector> &input_puzzle_values,
-                                            bit_vector &hash_of_input_seed_key
+                                            bit_vector &hash_of_input_seed_key,
+                                            std::vector<bit_vector> &input_encrypted_solution
     )
 {
     unsigned int dimension = n*n;
     assert(input_puzzle_values.size() == dimension*dimension);
+    assert(input_encrypted_solution.size() == dimension*dimension);
     bit_vector input_as_bits;
 
     for (unsigned int i = 0; i < dimension*dimension; i++) {
         assert(input_puzzle_values[i].size() == 8);
         input_as_bits.insert(input_as_bits.end(), input_puzzle_values[i].begin(), input_puzzle_values[i].end());
+    }
+    for (unsigned int i = 0; i < dimension*dimension; i++) {
+        assert(input_encrypted_solution[i].size() == 8);
+        input_as_bits.insert(input_as_bits.end(), input_encrypted_solution[i].begin(), input_encrypted_solution[i].end());
     }
     input_as_bits.insert(input_as_bits.end(), hash_of_input_seed_key.begin(), hash_of_input_seed_key.end());
     std::vector<FieldT> input_as_field_elements = pack_bit_vector_into_field_element_vector<FieldT>(input_as_bits);

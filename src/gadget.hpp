@@ -81,6 +81,7 @@ public:
 
     std::vector<pb_variable_array<FieldT>> puzzle_values;
     std::vector<pb_variable_array<FieldT>> solution_values;
+    std::vector<pb_variable_array<FieldT>> encrypted_solution;
 
     std::vector<pb_linear_combination<FieldT>> puzzle_numbers;
     std::vector<pb_linear_combination<FieldT>> solution_numbers;
@@ -106,13 +107,15 @@ public:
     void generate_r1cs_witness(std::vector<bit_vector> &puzzle_values,
                                std::vector<bit_vector> &input_solution_values,
                                bit_vector &input_seed_key,
-                               bit_vector &hash_of_input_seed_key);
+                               bit_vector &hash_of_input_seed_key,
+                               std::vector<bit_vector> &input_encrypted_solution);
 };
 
 template<typename FieldT>
 r1cs_primary_input<FieldT> sodoku_input_map(unsigned int n,
                                             std::vector<bit_vector> &puzzle_values,
-                                            bit_vector &hash_of_input_seed_key
+                                            bit_vector &hash_of_input_seed_key,
+                                            std::vector<bit_vector> &input_encrypted_solution
                                             );
 
 #include "gadget.tcc"

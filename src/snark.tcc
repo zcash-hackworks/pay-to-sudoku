@@ -93,12 +93,13 @@ r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair()
 }
 
 template<typename ppzksnark_ppT>
-boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
-                                                                   vector<uint8_t> &puzzle,
-                                                                   vector<uint8_t> &solution,
-                                                                   vector<bool> &key,
-                                                                   vector<bool> &h_of_key
-                                                                   )
+boost::optional<std::tuple<r1cs_ppzksnark_proof<ppzksnark_ppT>,std::vector<std::vector<bool>>>>
+  generate_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
+                 vector<uint8_t> &puzzle,
+                 vector<uint8_t> &solution,
+                 vector<bool> &key,
+                 vector<bool> &h_of_key
+                 )
 {
     typedef Fr<ppzksnark_ppT> FieldT;
 
@@ -108,37 +109,33 @@ boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksna
 
     auto new_puzzle = convertPuzzleToBool(puzzle);
     auto new_solution = convertPuzzleToBool(solution);
+    auto encrypted_solution = xorSolution(new_solution, key);
 
-    // TEST!
-    {
-      auto encrypted_solution = xorSolution(new_solution, key);
-      auto decrypted_solution = xorSolution(encrypted_solution, key);
-
-      assert(decrypted_solution == new_solution);
-    }
-    // END TEST!
-
-    g.generate_r1cs_witness(new_puzzle, new_solution, key, h_of_key);
+    g.generate_r1cs_witness(new_puzzle, new_solution, key, h_of_key, encrypted_solution);
 
     if (!pb.is_satisfied()) {
         return boost::none;
     }
 
-    return r1cs_ppzksnark_prover<ppzksnark_ppT>(proving_key, pb.primary_input(), pb.auxiliary_input());
+    return std::make_tuple(
+      r1cs_ppzksnark_prover<ppzksnark_ppT>(proving_key, pb.primary_input(), pb.auxiliary_input()),
+      encrypted_solution
+    );
 }
 
 template<typename ppzksnark_ppT>
 bool verify_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_key,
                   r1cs_ppzksnark_proof<ppzksnark_ppT> proof,
                   vector<uint8_t> &puzzle,
-                  vector<bool> &h_of_key
+                  vector<bool> &h_of_key,
+                  std::vector<std::vector<bool>> &encrypted_solution
                  )
 {
     typedef Fr<ppzksnark_ppT> FieldT;
 
     auto new_puzzle = convertPuzzleToBool(puzzle);
 
-    const r1cs_primary_input<FieldT> input = sodoku_input_map<FieldT>(3, new_puzzle, h_of_key);
+    const r1cs_primary_input<FieldT> input = sodoku_input_map<FieldT>(3, new_puzzle, h_of_key, encrypted_solution);
 
     return r1cs_ppzksnark_verifier_strong_IC<ppzksnark_ppT>(verification_key, input, proof);
 }
