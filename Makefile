@@ -11,7 +11,8 @@ LDLIBS += -lboost_system
 
 all:
 	$(CXX) -o test.o src/test.cpp -c $(CXXFLAGS)
-	$(CXX) -o test test.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) -o sha256.o src/sha256.c -c $(CXXFLAGS)
+	$(CXX) -o test test.o sha256.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
 clean:
-	$(RM) test.o test
+	$(RM) test.o sha256.o test

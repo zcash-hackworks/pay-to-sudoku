@@ -3,6 +3,7 @@
 
 #include "snark.hpp"
 #include "test.h"
+#include "sha256.h"
 
 using namespace libsnark;
 using namespace std;
@@ -158,14 +159,26 @@ bool run_test(r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>& keypair,
     std::vector<uint8_t> solution
     ) {
 
-    std::vector<unsigned char> key(32, 0);
+    unsigned char key[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    unsigned char h_of_key[32];
+    {
+        SHA256_CTX ctx256;
+        sha256_init(&ctx256);
+        sha256_update(&ctx256, key, 32);
+        sha256_final(&ctx256, h_of_key);
+    }
+    std::vector<unsigned char> key_v(32);
+    std::vector<unsigned char> h_of_key_v(32);
 
-    auto proof = generate_proof<default_r1cs_ppzksnark_pp>(keypair.pk, puzzle, solution, key);
+    convertBytesToBytesVector(key, key_v);
+    convertBytesToBytesVector(h_of_key, h_of_key_v);
+
+    auto proof = generate_proof<default_r1cs_ppzksnark_pp>(keypair.pk, puzzle, solution, key_v, h_of_key_v);
 
     if (!proof) {
         return false;
     } else {
-        assert(verify_proof(keypair.vk, *proof, puzzle));
+        assert(verify_proof(keypair.vk, *proof, puzzle, h_of_key_v));
         return true;
     }
 }

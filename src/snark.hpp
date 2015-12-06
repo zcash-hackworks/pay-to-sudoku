@@ -23,6 +23,12 @@ void convertBytesVectorToBytes(const std::vector<unsigned char>& v, unsigned cha
     }
 }
 
+void convertBytesToBytesVector(const unsigned char* bytes, std::vector<unsigned char>& v) {
+    for(size_t i = 0; i < v.size(); i++) {
+        v.at(i) = bytes[i];
+    }
+}
+
 void convertBytesToVector(const unsigned char* bytes, std::vector<bool>& v) {
     int numBytes = v.size() / 8;
     unsigned char c;
@@ -49,13 +55,15 @@ template<typename ppzksnark_ppT>
 boost::optional<r1cs_ppzksnark_proof<ppzksnark_ppT>> generate_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
                                                                    std::vector<uint8_t> &puzzle,
                                                                    std::vector<uint8_t> &solution,
-                                                                   std::vector<unsigned char> &key
+                                                                   std::vector<unsigned char> &key,
+                                                                   std::vector<unsigned char> &h_of_key
                                                                    );
 
 template<typename ppzksnark_ppT>
 bool verify_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_key,
                   r1cs_ppzksnark_proof<ppzksnark_ppT> proof,
-                  std::vector<uint8_t> &puzzle
+                  std::vector<uint8_t> &puzzle,
+                  std::vector<unsigned char> &h_of_key
                  );
 
 #include "snark.tcc"

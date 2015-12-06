@@ -17,7 +17,7 @@ sodoku_encryption_key<FieldT>::sodoku_encryption_key(protoboard<FieldT> &pb,
     key_sha.resize(num_key_digests);
 
     // IV for SHA256
-    pb_linear_combination_array<FieldT> IV = SHA256_default_IV(pb);
+    IV = SHA256_default_IV(pb);
 
     for (unsigned int i = 0; i < num_key_digests; i++) {
         key[i].reset(new digest_variable<FieldT>(pb, 256, "key[i]"));
@@ -166,7 +166,7 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
 
     assert(dimension < 256); // any more will overflow the 8 bit storage
 
-    const size_t input_size_in_bits = dimension * dimension * 8;
+    const size_t input_size_in_bits = (dimension * dimension * 8) + /* H(K) */ 256;
     {
         const size_t input_size_in_field_elements = div_ceil(input_size_in_bits, FieldT::capacity());
         input_as_field_elements.allocate(pb, input_size_in_field_elements, "input_as_field_elements");
@@ -224,9 +224,26 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
     }
 
     seed_key.reset(new digest_variable<FieldT>(pb, 256, "seed_key"));
+    h_seed_key.reset(new digest_variable<FieldT>(pb, 256, "seed_key"));
+    input_as_bits.insert(input_as_bits.end(), h_seed_key->bits.begin(), h_seed_key->bits.end());
 
     pb_variable_array<FieldT> seed_key_cropped(seed_key->bits.begin(), seed_key->bits.begin() + (256 - 8));
     key.reset(new sodoku_encryption_key<FieldT>(pb, dimension, seed_key_cropped));
+
+    {
+        /*
+        auto block = new block_variable<FieldT>(pb, {
+            h_seed_key->bits,
+            key->padding_var->bits
+        }, "key_blocks[i]");
+
+        h_k_sha.reset(new sha256_compression_function_gadget<FieldT>(pb,
+                                                              key->IV,
+                                                              block->bits,
+                                                              *h_seed_key,
+                                                              "H(K)"));
+        */
+    }
 
     assert(input_as_bits.size() == input_size_in_bits);
     unpack_inputs.reset(new multipacking_gadget<FieldT>(this->pb, input_as_bits, input_as_field_elements, FieldT::capacity(), FMT(this->annotation_prefix, " unpack_inputs")));
@@ -263,7 +280,9 @@ void sodoku_gadget<FieldT>::generate_r1cs_constraints()
     }
 
     seed_key->generate_r1cs_constraints();
+    h_seed_key->generate_r1cs_constraints();
     key->generate_r1cs_constraints();
+    //h_k_sha->generate_r1cs_constraints();
 
     unpack_inputs->generate_r1cs_constraints(true);
 }
@@ -271,7 +290,8 @@ void sodoku_gadget<FieldT>::generate_r1cs_constraints()
 template<typename FieldT>
 void sodoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzzle_values,
                                              std::vector<bit_vector> &input_solution_values,
-                                             bit_vector &input_seed_key
+                                             bit_vector &input_seed_key,
+                                             bit_vector &hash_of_input_seed_key
     )
 {
     assert(input_puzzle_values.size() == dimension*dimension);
@@ -305,12 +325,18 @@ void sodoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input
     }
 
     key->generate_r1cs_witness();
+    //h_k_sha->generate_r1cs_witness();
+
+    h_seed_key->bits.fill_with_bits(this->pb, hash_of_input_seed_key);
 
     unpack_inputs->generate_r1cs_witness_from_bits();
 }
 
 template<typename FieldT>
-r1cs_primary_input<FieldT> sodoku_input_map(unsigned int n, std::vector<bit_vector> &input_puzzle_values)
+r1cs_primary_input<FieldT> sodoku_input_map(unsigned int n,
+                                            std::vector<bit_vector> &input_puzzle_values,
+                                            bit_vector &hash_of_input_seed_key
+    )
 {
     unsigned int dimension = n*n;
     assert(input_puzzle_values.size() == dimension*dimension);
@@ -320,6 +346,7 @@ r1cs_primary_input<FieldT> sodoku_input_map(unsigned int n, std::vector<bit_vect
         assert(input_puzzle_values[i].size() == 8);
         input_as_bits.insert(input_as_bits.end(), input_puzzle_values[i].begin(), input_puzzle_values[i].end());
     }
+    input_as_bits.insert(input_as_bits.end(), hash_of_input_seed_key.begin(), hash_of_input_seed_key.end());
     std::vector<FieldT> input_as_field_elements = pack_bit_vector_into_field_element_vector<FieldT>(input_as_bits);
     return input_as_field_elements;
 }

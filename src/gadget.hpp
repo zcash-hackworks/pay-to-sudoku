@@ -12,6 +12,7 @@ public:
     unsigned int dimension;
 
     std::shared_ptr<digest_variable<FieldT>> padding_var;
+    pb_linear_combination_array<FieldT> IV;
 
     std::vector<std::shared_ptr<digest_variable<FieldT>>> key; // dimension*dimension*8 bit key
     std::vector<pb_variable_array<FieldT>> salts;
@@ -91,6 +92,9 @@ public:
     std::vector<std::shared_ptr<sodoku_closure_gadget<FieldT>>> closure_groups;
 
     std::shared_ptr<digest_variable<FieldT>> seed_key;
+    std::shared_ptr<digest_variable<FieldT>> h_seed_key;
+
+    std::shared_ptr<sha256_compression_function_gadget<FieldT>> h_k_sha;
     std::shared_ptr<sodoku_encryption_key<FieldT>> key;
 
     pb_variable_array<FieldT> puzzle_enforce;
@@ -100,10 +104,14 @@ public:
     void generate_r1cs_constraints();
     void generate_r1cs_witness(std::vector<bit_vector> &puzzle_values,
                                std::vector<bit_vector> &input_solution_values,
-                               bit_vector &input_seed_key);
+                               bit_vector &input_seed_key,
+                               bit_vector &hash_of_input_seed_key);
 };
 
 template<typename FieldT>
-r1cs_primary_input<FieldT> sodoku_input_map(std::vector<bit_vector> &puzzle_values);
+r1cs_primary_input<FieldT> sodoku_input_map(unsigned int n,
+                                            std::vector<bit_vector> &puzzle_values,
+                                            bit_vector &hash_of_input_seed_key
+                                            );
 
 #include "gadget.tcc"
