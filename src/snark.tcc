@@ -78,12 +78,12 @@ std::vector<std::vector<bool>> xorSolution(const std::vector<std::vector<bool>> 
 }
 
 template<typename ppzksnark_ppT>
-r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair()
+r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair(uint32_t n)
 {
     typedef Fr<ppzksnark_ppT> FieldT;
 
     protoboard<FieldT> pb;
-    sodoku_gadget<FieldT> g(pb, 3);
+    sodoku_gadget<FieldT> g(pb, n);
     g.generate_r1cs_constraints();
     const r1cs_constraint_system<FieldT> constraint_system = pb.get_constraint_system();
 

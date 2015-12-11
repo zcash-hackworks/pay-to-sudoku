@@ -1,0 +1,10 @@
+[package]
+author = "ewillbefull@gmail.com"
+name = "pay-to-sodoku"
+version = "0.0.1"
+
+[dependencies]
+fixedbitset = "0.1.0"
+libc = "0.2.2"
+rand = "0.3.12"
+whiteread = "0.2.0"
