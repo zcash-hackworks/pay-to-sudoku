@@ -44,7 +44,7 @@ sample puzzle:
 */
 
 fn main() {
-    unsafe { ffi::mysnark_init_public_params(); }
+    unsafe { ffi::init(); }
 
     //let n: usize = prompt("N: ");
     let n = 3;
@@ -72,21 +72,21 @@ fn main() {
 
     ffi::generate_keypair(3, |pk, vk| {
         println!("good for you");
-        let keypair = ffi::Keypair::new(pk, vk);
+        let ctx = ffi::get_context(pk, vk, 3);
 
         println!("nice");
 
-        assert!(ffi::prove(keypair, 3, &puzzle, &solution, &key, &h_of_key));
+        assert!(ffi::prove(ctx, &puzzle, &solution, &key, &h_of_key));
 
         key[0] = 0;
 
-        assert!(!ffi::prove(keypair, 3, &puzzle, &solution, &key, &h_of_key));
+        assert!(!ffi::prove(ctx, &puzzle, &solution, &key, &h_of_key));
 
         key[0] = 206;
 
         solution[0] = 9;
 
-        assert!(!ffi::prove(keypair, 3, &puzzle, &solution, &key, &h_of_key));
+        assert!(!ffi::prove(ctx, &puzzle, &solution, &key, &h_of_key));
 
         println!("ok");
     });

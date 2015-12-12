@@ -3,11 +3,17 @@ use std::slice;
 use libc::{c_char, uint8_t, uint32_t, int32_t, c_void};
 
 #[repr(C)]
-pub struct Keypair;
+struct Keypair;
+
+#[derive(Copy, Clone)]
+pub struct Context {
+    keypair: *const Keypair,
+    n: usize
+}
 
 #[link(name = "mysnark")]
 extern "C" {
-    pub fn mysnark_init_public_params();
+    pub fn init();
     fn gen_keypair(n: uint32_t, h: *mut c_void, cb: extern fn(*mut c_void, *const c_char, int32_t, *const c_char, int32_t));
     fn load_keypair(pk_s: *const c_char, pk_l: int32_t, vk_s: *const c_char, vk_l: int32_t)
         -> *const Keypair;
@@ -35,19 +41,25 @@ pub fn generate_keypair<F: for<'a> FnMut(&'a [i8], &'a [i8])>(num: u32, mut f: F
     }
 }
 
-impl Keypair {
-    pub fn new(pk: &[i8], vk: &[i8]) -> *const Keypair {
-        unsafe {
-            load_keypair(&pk[0], pk.len() as i32, &vk[0], vk.len() as i32)
-        }
+pub fn get_context(pk: &[i8], vk: &[i8], n: usize) -> Context {
+    let keypair = unsafe {
+        load_keypair(&pk[0], pk.len() as i32, &vk[0], vk.len() as i32)
+    };
+
+    Context {
+        keypair: keypair,
+        n: n
     }
 }
 
-pub fn prove(pk: *const Keypair, n: usize, puzzle: &[u8], solution: &[u8], key: &[u8], h_of_key: &[u8]) -> bool {
-    assert_eq!(puzzle.len(), n*n*n*n);
-    assert_eq!(solution.len(), n*n*n*n);
+pub fn prove(ctx: Context, puzzle: &[u8], solution: &[u8], key: &[u8], h_of_key: &[u8]) -> bool {
+    let cells = ctx.n.pow(4);
+    assert_eq!(puzzle.len(), cells);
+    assert_eq!(solution.len(), cells);
+    assert_eq!(key.len(), 32);
+    assert_eq!(h_of_key.len(), 32);
 
     unsafe {
-        gen_proof(pk, n as u32, &puzzle[0], &solution[0], &key[0], &h_of_key[0])
+        gen_proof(ctx.keypair, ctx.n as u32, &puzzle[0], &solution[0], &key[0], &h_of_key[0])
     }
 }

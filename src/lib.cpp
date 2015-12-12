@@ -80,9 +80,6 @@ extern "C" bool gen_proof(void *keypair, uint32_t n, uint8_t* puzzle, uint8_t* s
     convertBytesVectorToVector(v_input_key, key);
     convertBytesVectorToVector(v_input_h_of_key, h_of_key);
     
-    //vector<bool> key = int_list_to_bits({206, 64, 25, 10, 245, 205, 246, 107, 191, 157, 114, 181, 63, 40, 95, 134, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94}, 8);
-    //vector<bool> h_of_key = int_list_to_bits({253, 199, 66, 55, 24, 155, 80, 121, 138, 60, 36, 201, 186, 221, 164, 65, 194, 53, 192, 159, 252, 7, 194, 24, 200, 217, 57, 55, 45, 204, 71, 9}, 8);
-
     auto proof = generate_proof<default_r1cs_ppzksnark_pp>(our_keypair->pk, new_puzzle, new_solution, key, h_of_key);
 
     if (!proof) {
