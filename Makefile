@@ -15,10 +15,6 @@ all:
 	$(CXX) -shared -o libmysnark.so lib.o sha256.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 	cp libmysnark.so target/debug
 
-test:
-	$(CXX) -o test.o src/test.cpp -c $(CXXFLAGS)
-	$(CXX) -o test test.o sha256.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
-
 clean:
-	$(RM) test.o sha256.o test
+	$(RM) sha256.o
 	$(RM) lib.o libmysnark.so target/debug/libmysnark.so
