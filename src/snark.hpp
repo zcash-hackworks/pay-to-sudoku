@@ -6,6 +6,21 @@
 
 using namespace libsnark;
 
+uint64_t convertVectorToInt(const std::vector<bool>& v) {
+    if (v.size() > 64) {
+        throw std::length_error ("boolean vector can't be larger than 64 bits");
+    }
+
+    uint64_t result = 0;
+    for (size_t i=0; i<v.size();i++) {
+        if (v.at(i)) {
+            result |= (uint64_t)1 << ((v.size() - 1) - i);
+        }
+    }
+
+    return result;
+}
+
 std::vector<bool> convertIntToVector(uint8_t val) {
   std::vector<bool> ret;
 

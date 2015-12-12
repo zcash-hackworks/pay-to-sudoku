@@ -44,7 +44,7 @@ sample puzzle:
 */
 
 fn main() {
-    unsafe { ffi::init(); }
+    unsafe { ffi::mysnark_init_public_params(); }
 
     //let n: usize = prompt("N: ");
     let n = 3;
@@ -76,17 +76,30 @@ fn main() {
 
         println!("nice");
 
-        assert!(ffi::prove(ctx, &puzzle, &solution, &key, &h_of_key));
+        assert!(ffi::prove(ctx, &puzzle, &solution, &key, &h_of_key, |e, p| {
+            println!("proof len: {}", p.len());
+            println!("enc solution len: {}", e.len());
+
+            let mut d: Vec<u8> = e.into();
+
+            ffi::decrypt(ctx, &mut d, &key);
+
+            assert_eq!(d, solution);
+        }));
 
         key[0] = 0;
 
-        assert!(!ffi::prove(ctx, &puzzle, &solution, &key, &h_of_key));
+        assert!(!ffi::prove(ctx, &puzzle, &solution, &key, &h_of_key, |_, _| {
+            
+        }));
 
         key[0] = 206;
 
         solution[0] = 9;
 
-        assert!(!ffi::prove(ctx, &puzzle, &solution, &key, &h_of_key));
+        assert!(!ffi::prove(ctx, &puzzle, &solution, &key, &h_of_key, |_, _| {
+            
+        }));
 
         println!("ok");
     });

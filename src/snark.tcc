@@ -13,6 +13,18 @@ std::vector<std::vector<bool>> convertPuzzleToBool(std::vector<uint8_t> puzzle) 
     return new_puzzle;
 }
 
+std::vector<uint8_t> convertBoolToPuzzle(std::vector<std::vector<bool>> bool_puzzle)
+{
+  std::vector<uint8_t> new_puzzle;
+
+  for(std::vector<std::vector<bool>>::iterator it = bool_puzzle.begin(); it != bool_puzzle.end(); ++it)
+  {
+    new_puzzle.insert(new_puzzle.end(), convertVectorToInt(*it));
+  }
+
+  return new_puzzle;
+}
+
 std::vector<std::vector<bool>> xorSolution(const std::vector<std::vector<bool>> &solution, const std::vector<bool> &key)
 {
     // input key is 256 bits
