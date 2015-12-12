@@ -103,3 +103,33 @@ extern "C" bool gen_proof(void *keypair, void* h, proof_callback cb, uint32_t n,
         return true;
     }
 }
+
+extern "C" bool snark_verify(void *keypair,
+                             uint32_t n,
+                             const char* proof,
+                             int32_t proof_len,
+                             uint8_t* puzzle,
+                             uint8_t* input_h_of_key,
+                             uint8_t* enc_solution
+                             )
+{
+    auto our_keypair = reinterpret_cast<r1cs_ppzksnark_keypair<default_r1cs_ppzksnark_pp>*>(keypair);
+
+    vector<uint8_t> new_puzzle(puzzle, puzzle+(n*n*n*n));
+    vector<uint8_t> encrypted_solution(enc_solution, enc_solution+(n*n*n*n));
+    vector<unsigned char> input_h_of_key_v(input_h_of_key, input_h_of_key+32);
+
+    vector<bool> h_of_key;
+    convertBytesVectorToVector(input_h_of_key_v, h_of_key);
+
+    r1cs_ppzksnark_proof<default_r1cs_ppzksnark_pp> deserialized_proof;
+
+    std::string proof_s(proof, proof+proof_len);
+    std::stringstream ss;
+    ss.str(proof_s);
+    ss >> deserialized_proof;
+
+    auto enc_sol_new = convertPuzzleToBool(encrypted_solution);
+
+    return verify_proof(our_keypair->vk, deserialized_proof, new_puzzle, h_of_key, enc_sol_new);
+}

@@ -85,6 +85,10 @@ fn main() {
             ffi::decrypt(ctx, &mut d, &key);
 
             assert_eq!(d, solution);
+
+            assert_eq!(ffi::verify(ctx, p, &puzzle, &h_of_key, e), true);
+
+            assert_eq!(ffi::verify(ctx, p, &puzzle, &h_of_key, &d), false);
         }));
 
         key[0] = 0;

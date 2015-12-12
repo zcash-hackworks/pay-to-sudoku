@@ -22,6 +22,14 @@ extern "C" {
                  n: uint32_t, puzzle: *const uint8_t, solution: *const uint8_t,
                  key: *const uint8_t, h_of_key: *const uint8_t) -> bool;
     fn decrypt_solution(n: uint32_t, enc: *mut uint8_t, key: *const uint8_t);
+    fn snark_verify(keypair: *const Keypair,
+                    n: uint32_t,
+                    proof: *const c_char,
+                    proof_len: int32_t,
+                    puzzle: *const uint8_t,
+                    h_of_key: *const uint8_t,
+                    enc_solution: *const uint8_t
+                    ) -> bool;
 }
 
 extern "C" fn handle_proof_callback(cb: *mut c_void, n: uint32_t, encrypted_solution: *const uint8_t, proof: *const c_char, proof_len: int32_t)
@@ -86,4 +94,13 @@ pub fn decrypt(ctx: Context, enc_solution: &mut [u8], key: &[u8])
     assert_eq!(ctx.n.pow(4), enc_solution.len());
     assert_eq!(key.len(), 32);
     unsafe { decrypt_solution(ctx.n as u32, &mut enc_solution[0], &key[0]); }
+}
+
+pub fn verify(ctx: Context, proof: &[i8], puzzle: &[u8], h_of_key: &[u8], encrypted_solution: &[u8]) -> bool
+{
+    assert_eq!(ctx.n.pow(4), encrypted_solution.len());
+    assert_eq!(ctx.n.pow(4), puzzle.len());
+    assert_eq!(h_of_key.len(), 32);
+
+    unsafe { snark_verify(ctx.keypair, ctx.n as u32, &proof[0], proof.len() as int32_t, &puzzle[0], &h_of_key[0], &encrypted_solution[0]) }
 }
