@@ -1,3 +1,10 @@
+# todo
+
+* automated sudoku solver
+* cache pk/vk
+* clean up code
+* bitcoin transaction stuff
+
 # circuit description for some NxN puzzle:
 
 **primary inputs**: sodoku puzzle `P`, key commitment `C`, encrypted solution `E`
