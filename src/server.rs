@@ -27,6 +27,7 @@ solution:
 extern crate whiteread;
 extern crate libc;
 extern crate bincode;
+extern crate hex;
 extern crate serde;
 
 use std::net::{TcpListener,TcpStream};
@@ -37,6 +38,7 @@ use bincode::serde::{serialize_into, deserialize_from};
 use bincode::SizeLimit::Infinite;
 use serde::bytes::Bytes;
 use std::borrow::Cow;
+use hex::{ToHex, FromHex};
 
 mod ffi;
 
@@ -101,11 +103,33 @@ fn handle_client(stream: &mut TcpStream, ctx: Context, pk: &[i8], vk: &[i8]) {
         
         if verify(ctx, &proof, &puzzle, &h_of_key, &encrypted_solution) {
             println!("Proof is valid!");
-            println!("In order to decrypt the proof, get the preimage of {:?}", h_of_key);
+            println!("In order to decrypt the proof, get the preimage of {}", h_of_key.to_hex());
+
+            let key: String = prompt("Preimage: ");
+            let key: Vec<u8> = FromHex::from_hex(&key).unwrap();
+
+            let mut encrypted_solution = encrypted_solution.into_owned();
+
+            decrypt(ctx, &mut encrypted_solution, &key);
+
+            print_sudoku(ctx.n*ctx.n, &encrypted_solution);
         } else {
             println!("The remote end provided a proof that wasn't valid!");
         }
     }
+}
+
+fn print_sudoku(dim: usize, grid: &[u8]) {
+    for y in 0..dim {
+        for x in 0..dim {
+            print!("{}", grid[y*dim + x]);
+            if x != (dim-1) || y != (dim-1) {
+                print!(" ");
+            }
+        }
+        println!("");
+    }
+    println!("");
 }
 
 fn prompt<T: whiteread::White>(prompt: &str) -> T {
