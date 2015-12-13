@@ -8,7 +8,7 @@ struct Keypair;
 #[derive(Copy, Clone)]
 pub struct Context {
     keypair: *const Keypair,
-    n: usize
+    pub n: usize
 }
 
 #[link(name = "mysnark")]
@@ -30,6 +30,10 @@ extern "C" {
                     h_of_key: *const uint8_t,
                     enc_solution: *const uint8_t
                     ) -> bool;
+}
+
+pub fn initialize() {
+    unsafe { mysnark_init_public_params(); }
 }
 
 extern "C" fn handle_proof_callback(cb: *mut c_void, n: uint32_t, encrypted_solution: *const uint8_t, proof: *const c_char, proof_len: int32_t)
@@ -56,11 +60,11 @@ extern "C" fn handle_keypair_callback(cb: *mut c_void, pk_s: *const c_char, pk_l
     }
 }
 
-pub fn generate_keypair<F: for<'a> FnMut(&'a [i8], &'a [i8])>(num: u32, mut f: F) {
+pub fn generate_keypair<F: for<'a> FnMut(&'a [i8], &'a [i8])>(num: usize, mut f: F) {
     let mut cb: &mut for<'a> FnMut(&'a [i8], &'a [i8]) = &mut f;
 
     unsafe {
-        gen_keypair(num, (&mut cb) as *mut _ as *mut c_void, handle_keypair_callback);
+        gen_keypair(num as u32, (&mut cb) as *mut _ as *mut c_void, handle_keypair_callback);
     }
 }
 

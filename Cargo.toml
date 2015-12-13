@@ -1,10 +1,20 @@
 [package]
-author = "ewillbefull@gmail.com"
-name = "pay-to-sodoku"
+authors = ["ewillbefull@gmail.com"]
+name = "pay-to-sudoku"
 version = "0.0.1"
 
+[[bin]]
+name = "server"
+path = "src/server.rs"
+
+[[bin]]
+name = "client"
+path = "src/client.rs"
+
 [dependencies]
+bincode = "0.4.0"
 fixedbitset = "0.1.0"
 libc = "0.2.2"
 rand = "0.3.12"
+serde = "0.6.6"
 whiteread = "0.2.0"
