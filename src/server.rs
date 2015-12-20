@@ -1,32 +1,7 @@
-/*
-sample puzzle:
-
-8 0 0 0 0 0 0 0 0
-0 0 3 6 0 0 0 0 0
-0 7 0 0 9 0 2 0 0
-0 5 0 0 0 7 0 0 0
-0 0 0 0 4 5 7 0 0
-0 0 0 1 0 0 0 3 0
-0 0 1 0 0 0 0 6 8
-0 0 8 5 0 0 0 1 0
-0 9 0 0 0 0 4 0 0
-
-solution:
-
-8 1 2 7 5 3 6 4 9
-9 4 3 6 8 2 1 7 5
-6 7 5 4 9 1 2 8 3
-1 5 4 2 3 7 8 9 6
-3 6 9 8 4 5 7 2 1
-2 8 7 1 6 9 5 3 4
-5 2 1 9 7 4 3 6 8
-4 3 8 5 2 6 9 1 7
-7 9 6 3 1 8 4 5 2
-*/
-
 extern crate whiteread;
 extern crate libc;
 extern crate bincode;
+extern crate rand;
 extern crate hex;
 extern crate serde;
 extern crate clap;
@@ -35,6 +10,7 @@ extern crate flate2;
 use std::net::{TcpListener,TcpStream};
 use std::io::{self, Read, Write};
 use self::ffi::*;
+use self::sudoku::Sudoku;
 use self::util::*;
 use whiteread::parse_line;
 use bincode::serde::{serialize_into, deserialize_from};
@@ -44,7 +20,7 @@ use std::borrow::Cow;
 use hex::{ToHex, FromHex};
 use clap::{App, Arg, SubCommand};
 
-
+mod sudoku;
 mod ffi;
 mod util;
 
@@ -88,6 +64,8 @@ fn main() {
         });
     }
 
+
+
     if let Some(ref matches) = matches.subcommand_matches("test") {
         let n = 3;
 
@@ -98,16 +76,19 @@ fn main() {
             get_context(&pk, &vk, n)
         };
 
-        println!("Enter puzzle:");
-        let puzzle = get_sudoku_from_stdin(n*n);
-        println!("Enter solution:");
-        let solution = get_sudoku_from_stdin(n*n);
+        loop {
+            let puzzle = Sudoku::gen(n);
+            let solution = Sudoku::import_and_solve(n, &puzzle).unwrap();
 
-        let key = vec![206, 64, 25, 10, 245, 205, 246, 107, 191, 157, 114, 181, 63, 40, 95, 134, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94];
-        let h_of_key = vec![253, 199, 66, 55, 24, 155, 80, 121, 138, 60, 36, 201, 186, 221, 164, 65, 194, 53, 192, 159, 252, 7, 194, 24, 200, 217, 57, 55, 45, 204, 71, 9];
+            let puzzle: Vec<u8> = puzzle.into_iter().map(|x| x as u8).collect();
+            let solution: Vec<u8> = solution.into_iter().map(|x| x as u8).collect();
 
-        assert!(prove(ctx, &puzzle, &solution, &key, &h_of_key,
+            let key = vec![206, 64, 25, 10, 245, 205, 246, 107, 191, 157, 114, 181, 63, 40, 95, 134, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94];
+            let h_of_key = vec![253, 199, 66, 55, 24, 155, 80, 121, 138, 60, 36, 201, 186, 221, 164, 65, 194, 53, 192, 159, 252, 7, 194, 24, 200, 217, 57, 55, 45, 204, 71, 9];
+
+            assert!(prove(ctx, &puzzle, &solution, &key, &h_of_key,
               |encrypted_solution, proof| {}));
+        }
     }
 }
 
