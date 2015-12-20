@@ -1,6 +1,8 @@
 test
 *.o
 *.d
+*.pk
+*.vk
 depinst
 depsrc
 target

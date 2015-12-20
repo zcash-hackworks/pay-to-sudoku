@@ -29,6 +29,8 @@ extern crate libc;
 extern crate bincode;
 extern crate hex;
 extern crate serde;
+extern crate clap;
+extern crate flate2;
 
 use std::net::{TcpListener,TcpStream};
 use std::io::{self, Read, Write};
@@ -40,10 +42,76 @@ use bincode::SizeLimit::Infinite;
 use serde::bytes::Bytes;
 use std::borrow::Cow;
 use hex::{ToHex, FromHex};
+use clap::{App, Arg, SubCommand};
+
 
 mod ffi;
 mod util;
 
+fn main() {
+    initialize();
+
+    let matches = App::new("pay-to-sudoku")
+                  .subcommand(SubCommand::with_name("gen")
+                              .about("Generates a proving/verifying zkSNARK keypair")
+                              .arg(Arg::with_name("n")
+                                   .required(true)
+                                   .validator(|val| {
+                                        let n = val.parse::<usize>();
+
+                                        match n {
+                                            Err(_) => Err("`n` must be a number".into()),
+                                            Ok(n) => {
+                                                if n == 0 || n > 9 {
+                                                    Err("0 < n < n".into())
+                                                } else {
+                                                    Ok(())
+                                                }
+                                            }
+                                        }
+                                   })
+                  ))
+                  .subcommand(SubCommand::with_name("test"))
+                  .get_matches();
+
+    if let Some(ref matches) = matches.subcommand_matches("gen") {
+        let n: usize = matches.value_of("n").unwrap().parse().unwrap();
+
+        generate_keypair(n, |pk, vk| {
+            println!("Serialized proving key size in bytes: {}", pk.len());
+            println!("Serialized verifying key size in bytes: {}", vk.len());
+
+            println!("Storing...");
+
+            write_compressed(&format!("{}.pk", n), &pk);
+            write_compressed(&format!("{}.vk", n), &vk);
+        });
+    }
+
+    if let Some(ref matches) = matches.subcommand_matches("test") {
+        let n = 3;
+
+        let ctx = {
+            let pk = decompress(&format!("{}.pk", n));
+            let vk = decompress(&format!("{}.vk", n));
+
+            get_context(&pk, &vk, n)
+        };
+
+        println!("Enter puzzle:");
+        let puzzle = get_sudoku_from_stdin(n*n);
+        println!("Enter solution:");
+        let solution = get_sudoku_from_stdin(n*n);
+
+        let key = vec![206, 64, 25, 10, 245, 205, 246, 107, 191, 157, 114, 181, 63, 40, 95, 134, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94];
+        let h_of_key = vec![253, 199, 66, 55, 24, 155, 80, 121, 138, 60, 36, 201, 186, 221, 164, 65, 194, 53, 192, 159, 252, 7, 194, 24, 200, 217, 57, 55, 45, 204, 71, 9];
+
+        assert!(prove(ctx, &puzzle, &solution, &key, &h_of_key,
+              |encrypted_solution, proof| {}));
+    }
+}
+
+/*
 fn main() {
     initialize();
 
@@ -120,3 +188,4 @@ fn handle_client(stream: &mut TcpStream, ctx: Context, pk: &[i8], vk: &[i8]) {
         }
     }
 }
+*/

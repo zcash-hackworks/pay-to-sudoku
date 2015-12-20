@@ -1,5 +1,8 @@
 use std::io::{self, Read, Write};
 use whiteread::{self,parse_line};
+use std::fs;
+use flate2::write::{ZlibEncoder, ZlibDecoder};
+use flate2::Compression;
 
 pub fn print_sudoku(dim: usize, grid: &[u8]) {
     for y in 0..dim {
@@ -30,4 +33,34 @@ pub fn get_sudoku_from_stdin(dimension: usize) -> Vec<u8> {
     }
 
     acc
+}
+
+pub fn write_compressed(path: &str, data: &[u8]) {
+    let handle = fs::File::create(path).unwrap();
+    let mut encoder = ZlibEncoder::new(handle, Compression::Best);
+    encoder.write_all(data).unwrap();
+    encoder.finish().unwrap();
+}
+
+pub fn decompress(path: &str) -> Vec<u8> {
+    let mut result = Vec::new();
+
+    {
+        let mut decoder = ZlibDecoder::new(&mut result);
+        let mut handle = fs::File::open(path).unwrap();
+
+        loop {
+            let mut buf = [0; 1024];
+
+            let read = handle.read(&mut buf).unwrap();
+            if read == 0 {
+                decoder.finish();
+                break;
+            }
+
+            decoder.write_all(&buf[0..read]).unwrap();
+        }
+    }
+
+    result
 }

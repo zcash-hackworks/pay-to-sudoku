@@ -60,16 +60,21 @@ extern "C" fn handle_keypair_callback(cb: *mut c_void, pk_s: *const c_char, pk_l
     }
 }
 
-pub fn generate_keypair<F: for<'a> FnMut(&'a [i8], &'a [i8])>(num: usize, mut f: F) {
-    let mut cb: &mut for<'a> FnMut(&'a [i8], &'a [i8]) = &mut f;
+pub fn generate_keypair<F: for<'a> FnMut(&'a [u8], &'a [u8])>(num: usize, mut f: F) {
+    let mut cb: &mut for<'a> FnMut(&'a [u8], &'a [u8]) = &mut f;
 
     unsafe {
         gen_keypair(num as u32, (&mut cb) as *mut _ as *mut c_void, handle_keypair_callback);
     }
 }
 
-pub fn get_context(pk: &[i8], vk: &[i8], n: usize) -> Context {
+pub fn get_context(pk: &[u8], vk: &[u8], n: usize) -> Context {
     let keypair = unsafe {
+        use std::mem::transmute;
+
+        let pk: &[i8] = transmute(pk);
+        let vk: &[i8] = transmute(vk);
+
         load_keypair(&pk[0], pk.len() as i32, &vk[0], vk.len() as i32)
     };
 
