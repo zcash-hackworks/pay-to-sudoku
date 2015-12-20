@@ -7,6 +7,7 @@ extern crate hex;
 use std::net::{TcpListener,TcpStream};
 use std::io::{self, Read, Write, BufReader};
 use self::ffi::*;
+use self::util::*;
 use whiteread::parse_line;
 use bincode::serde::{serialize_into, deserialize_from};
 use bincode::SizeLimit::Infinite;
@@ -15,6 +16,7 @@ use std::borrow::Cow;
 use hex::{ToHex, FromHex};
 
 mod ffi;
+mod util;
 
 fn main() {
     initialize();
@@ -41,61 +43,35 @@ fn main() {
         print_sudoku(ctx.n*ctx.n, &puzzle);
 
         println!("Solve it and post the solution.");
-        let solution = get_sodoku_from_stdin(ctx.n*ctx.n);
+        loop {
+            let solution = get_sudoku_from_stdin(ctx.n*ctx.n);
 
-        let key = vec![206, 64, 25, 10, 245, 205, 246, 107, 191, 157, 114, 181, 63, 40, 95, 134, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94];
-        let h_of_key = vec![253, 199, 66, 55, 24, 155, 80, 121, 138, 60, 36, 201, 186, 221, 164, 65, 194, 53, 192, 159, 252, 7, 194, 24, 200, 217, 57, 55, 45, 204, 71, 9];
+            let key = vec![206, 64, 25, 10, 245, 205, 246, 107, 191, 157, 114, 181, 63, 40, 95, 134, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94];
+            let h_of_key = vec![253, 199, 66, 55, 24, 155, 80, 121, 138, 60, 36, 201, 186, 221, 164, 65, 194, 53, 192, 159, 252, 7, 194, 24, 200, 217, 57, 55, 45, 204, 71, 9];
 
-        println!("Constructing proof...");
-
-        assert_eq!(ffi::prove(ctx,
-                              &puzzle,
-                              &solution,
-                              &key,
-                              &h_of_key, |encrypted_solution, proof| {
+            println!("Constructing proof...");
             
-            let encrypted_solution = Cow::Borrowed(encrypted_solution);
-            let proof = Cow::Borrowed(proof);
+            if ffi::prove(ctx,
+                                  &puzzle,
+                                  &solution,
+                                  &key,
+                                  &h_of_key, |encrypted_solution, proof| {
+                
+                let encrypted_solution = Cow::Borrowed(encrypted_solution);
+                let proof = Cow::Borrowed(proof);
 
-            serialize_into(&mut stream, &proof, Infinite);
-            serialize_into(&mut stream, &encrypted_solution, Infinite);
-            serialize_into(&mut stream, &h_of_key, Infinite);
-            
-        }), true);
-
-        println!("Proof sent!");
-        println!("Payment from server will be contingent on a preimage of {}", h_of_key.to_hex());
-        println!("Key: {}", key.to_hex());
-    }
-}
-
-fn print_sudoku(dim: usize, grid: &[u8]) {
-    for y in 0..dim {
-        for x in 0..dim {
-            print!("{}", grid[y*dim + x]);
-            if x != (dim-1) || y != (dim-1) {
-                print!(" ");
+                serialize_into(&mut stream, &proof, Infinite);
+                serialize_into(&mut stream, &encrypted_solution, Infinite);
+                serialize_into(&mut stream, &h_of_key, Infinite);
+                
+            }) {
+                println!("Proof sent!");
+                println!("Payment from server will be contingent on a preimage of {}", h_of_key.to_hex());
+                println!("Key: {}", key.to_hex());
+                break;
+            } else {
+                println!("That wasn't correct. Try again.");
             }
         }
-        println!("");
     }
-    println!("");
-}
-
-fn prompt<T: whiteread::White>(prompt: &str) -> T {
-    print!("{}", prompt);
-    io::stdout().flush().unwrap();
-    parse_line().unwrap()
-}
-
-fn get_sodoku_from_stdin(dimension: usize) -> Vec<u8> {
-    let mut acc = Vec::with_capacity(dimension*dimension);
-
-    for _ in 0..dimension {
-        let v: Vec<u8> = parse_line().unwrap();
-
-        acc.extend(v.into_iter());
-    }
-
-    acc
 }

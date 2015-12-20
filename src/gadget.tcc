@@ -1,8 +1,8 @@
 template<typename FieldT>
-sodoku_encryption_key<FieldT>::sodoku_encryption_key(protoboard<FieldT> &pb,
+sudoku_encryption_key<FieldT>::sudoku_encryption_key(protoboard<FieldT> &pb,
                                                unsigned int dimension,
                                                pb_variable_array<FieldT> &seed_key
-                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sodoku_closure_gadget")),
+                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sudoku_closure_gadget")),
                                                    seed_key(seed_key), dimension(dimension)
 {
     assert(seed_key.size() == (256-8));
@@ -37,7 +37,7 @@ sodoku_encryption_key<FieldT>::sodoku_encryption_key(protoboard<FieldT> &pb,
 }
 
 template<typename FieldT>
-void sodoku_encryption_key<FieldT>::generate_r1cs_constraints()
+void sudoku_encryption_key<FieldT>::generate_r1cs_constraints()
 {
     unsigned int num_key_digests = div_ceil(dimension * dimension * 8, 256);
 
@@ -73,7 +73,7 @@ void sodoku_encryption_key<FieldT>::generate_r1cs_constraints()
 }
 
 template<typename FieldT>
-void sodoku_encryption_key<FieldT>::generate_r1cs_witness()
+void sudoku_encryption_key<FieldT>::generate_r1cs_witness()
 {
     unsigned int num_key_digests = div_ceil(dimension * dimension * 8, 256);
 
@@ -93,17 +93,17 @@ void sodoku_encryption_key<FieldT>::generate_r1cs_witness()
 }
 
 template<typename FieldT>
-sodoku_closure_gadget<FieldT>::sodoku_closure_gadget(protoboard<FieldT> &pb,
+sudoku_closure_gadget<FieldT>::sudoku_closure_gadget(protoboard<FieldT> &pb,
                                                unsigned int dimension,
                                                std::vector<pb_variable_array<FieldT>> &flags
-                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sodoku_closure_gadget")),
+                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sudoku_closure_gadget")),
                                                    dimension(dimension), flags(flags)
 {
     assert(flags.size() == dimension);
 }
 
 template<typename FieldT>
-void sodoku_closure_gadget<FieldT>::generate_r1cs_constraints()
+void sudoku_closure_gadget<FieldT>::generate_r1cs_constraints()
 {
     for (unsigned int i=0; i<dimension; i++) {
         linear_combination<FieldT> sum;
@@ -117,7 +117,7 @@ void sodoku_closure_gadget<FieldT>::generate_r1cs_constraints()
 }
 
 template<typename FieldT>
-void sodoku_closure_gadget<FieldT>::generate_r1cs_witness()
+void sudoku_closure_gadget<FieldT>::generate_r1cs_witness()
 {
     
 }
@@ -125,17 +125,17 @@ void sodoku_closure_gadget<FieldT>::generate_r1cs_witness()
 
 
 template<typename FieldT>
-sodoku_cell_gadget<FieldT>::sodoku_cell_gadget(protoboard<FieldT> &pb,
+sudoku_cell_gadget<FieldT>::sudoku_cell_gadget(protoboard<FieldT> &pb,
                                                unsigned int dimension,
                                                pb_linear_combination<FieldT> &number
-                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sodoku_cell_gadget")),
+                                               ) : gadget<FieldT>(pb, FMT(annotation_prefix, " sudoku_cell_gadget")),
                                                    number(number), dimension(dimension)
 {
     flags.allocate(pb, dimension, "flags for each possible number");
 }
 
 template<typename FieldT>
-void sodoku_cell_gadget<FieldT>::generate_r1cs_constraints()
+void sudoku_cell_gadget<FieldT>::generate_r1cs_constraints()
 {
     for (unsigned int i = 0; i < dimension; i++) {
         generate_boolean_r1cs_constraint<FieldT>(this->pb, flags[i], "enforcement bitness");
@@ -147,7 +147,7 @@ void sodoku_cell_gadget<FieldT>::generate_r1cs_constraints()
 }
 
 template<typename FieldT>
-void sodoku_cell_gadget<FieldT>::generate_r1cs_witness()
+void sudoku_cell_gadget<FieldT>::generate_r1cs_witness()
 {
     for (unsigned int i = 0; i < dimension; i++) {
         if (this->pb.lc_val(number) == (i+1)) {
@@ -159,7 +159,7 @@ void sodoku_cell_gadget<FieldT>::generate_r1cs_witness()
 }
 
 template<typename FieldT>
-sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
+sudoku_gadget<FieldT>::sudoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
         gadget<FieldT>(pb, FMT(annotation_prefix, " l_gadget"))
 {
     dimension = n * n;
@@ -191,7 +191,7 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
 
         input_as_bits.insert(input_as_bits.end(), puzzle_values[i].begin(), puzzle_values[i].end());
 
-        cells[i].reset(new sodoku_cell_gadget<FieldT>(this->pb, dimension, solution_numbers[i]));
+        cells[i].reset(new sudoku_cell_gadget<FieldT>(this->pb, dimension, solution_numbers[i]));
     }
 
     for (unsigned int i = 0; i < (dimension*dimension); i++) {
@@ -212,8 +212,8 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
             col_flags.push_back(cells[j*dimension + i]->flags);
         }
 
-        closure_rows[i].reset(new sodoku_closure_gadget<FieldT>(this->pb, dimension, row_flags));
-        closure_cols[i].reset(new sodoku_closure_gadget<FieldT>(this->pb, dimension, col_flags));
+        closure_rows[i].reset(new sudoku_closure_gadget<FieldT>(this->pb, dimension, row_flags));
+        closure_cols[i].reset(new sudoku_closure_gadget<FieldT>(this->pb, dimension, col_flags));
     }
 
     for (unsigned int gi = 0; gi < dimension; gi++) {
@@ -227,7 +227,7 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
             }
         }
 
-        closure_groups[gi].reset(new sodoku_closure_gadget<FieldT>(this->pb, dimension, group_flags));
+        closure_groups[gi].reset(new sudoku_closure_gadget<FieldT>(this->pb, dimension, group_flags));
     }
 
     seed_key.reset(new digest_variable<FieldT>(pb, 256, "seed_key"));
@@ -235,7 +235,7 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
     input_as_bits.insert(input_as_bits.end(), h_seed_key->bits.begin(), h_seed_key->bits.end());
 
     pb_variable_array<FieldT> seed_key_cropped(seed_key->bits.begin(), seed_key->bits.begin() + (256 - 8));
-    key.reset(new sodoku_encryption_key<FieldT>(pb, dimension, seed_key_cropped));
+    key.reset(new sudoku_encryption_key<FieldT>(pb, dimension, seed_key_cropped));
 
     h_k_block.reset(new block_variable<FieldT>(pb, {
         seed_key->bits,
@@ -253,7 +253,7 @@ sodoku_gadget<FieldT>::sodoku_gadget(protoboard<FieldT> &pb, unsigned int n) :
 }
 
 template<typename FieldT>
-void sodoku_gadget<FieldT>::generate_r1cs_constraints()
+void sudoku_gadget<FieldT>::generate_r1cs_constraints()
 {
     for (unsigned int i = 0; i < (dimension*dimension); i++) {
         for (unsigned int j = 0; j < 8; j++) {
@@ -309,7 +309,7 @@ void sodoku_gadget<FieldT>::generate_r1cs_constraints()
 }
 
 template<typename FieldT>
-void sodoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzzle_values,
+void sudoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input_puzzle_values,
                                              std::vector<bit_vector> &input_solution_values,
                                              bit_vector &input_seed_key,
                                              bit_vector &hash_of_input_seed_key,
@@ -359,7 +359,7 @@ void sodoku_gadget<FieldT>::generate_r1cs_witness(std::vector<bit_vector> &input
 }
 
 template<typename FieldT>
-r1cs_primary_input<FieldT> sodoku_input_map(unsigned int n,
+r1cs_primary_input<FieldT> sudoku_input_map(unsigned int n,
                                             std::vector<bit_vector> &input_puzzle_values,
                                             bit_vector &hash_of_input_seed_key,
                                             std::vector<bit_vector> &input_encrypted_solution

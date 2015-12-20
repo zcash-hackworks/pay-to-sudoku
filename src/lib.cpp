@@ -78,7 +78,7 @@ extern "C" bool gen_proof(void *keypair, void* h, proof_callback cb, uint32_t n,
     convertBytesVectorToVector(v_input_key, key);
     convertBytesVectorToVector(v_input_h_of_key, h_of_key);
 
-    auto proof = generate_proof<default_r1cs_ppzksnark_pp>(our_keypair->pk, new_puzzle, new_solution, key, h_of_key);
+    auto proof = generate_proof<default_r1cs_ppzksnark_pp>(n, our_keypair->pk, new_puzzle, new_solution, key, h_of_key);
 
     if (!proof) {
         return false;
@@ -94,7 +94,7 @@ extern "C" bool gen_proof(void *keypair, void* h, proof_callback cb, uint32_t n,
             proof_serialized = ss.str();
         }
 
-        assert(verify_proof(our_keypair->vk, actual_proof, new_puzzle, h_of_key, encrypted_solution));
+        assert(verify_proof(n, our_keypair->vk, actual_proof, new_puzzle, h_of_key, encrypted_solution));
 
 
         // ok
@@ -131,5 +131,5 @@ extern "C" bool snark_verify(void *keypair,
 
     auto enc_sol_new = convertPuzzleToBool(encrypted_solution);
 
-    return verify_proof(our_keypair->vk, deserialized_proof, new_puzzle, h_of_key, enc_sol_new);
+    return verify_proof(n, our_keypair->vk, deserialized_proof, new_puzzle, h_of_key, enc_sol_new);
 }

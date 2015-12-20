@@ -95,7 +95,7 @@ r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair(uint32_t n)
     typedef Fr<ppzksnark_ppT> FieldT;
 
     protoboard<FieldT> pb;
-    sodoku_gadget<FieldT> g(pb, n);
+    sudoku_gadget<FieldT> g(pb, n);
     g.generate_r1cs_constraints();
     const r1cs_constraint_system<FieldT> constraint_system = pb.get_constraint_system();
 
@@ -106,7 +106,8 @@ r1cs_ppzksnark_keypair<ppzksnark_ppT> generate_keypair(uint32_t n)
 
 template<typename ppzksnark_ppT>
 boost::optional<std::tuple<r1cs_ppzksnark_proof<ppzksnark_ppT>,std::vector<std::vector<bool>>>>
-  generate_proof(r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
+  generate_proof(uint32_t n,
+                 r1cs_ppzksnark_proving_key<ppzksnark_ppT> proving_key,
                  vector<uint8_t> &puzzle,
                  vector<uint8_t> &solution,
                  vector<bool> &key,
@@ -116,7 +117,7 @@ boost::optional<std::tuple<r1cs_ppzksnark_proof<ppzksnark_ppT>,std::vector<std::
     typedef Fr<ppzksnark_ppT> FieldT;
 
     protoboard<FieldT> pb;
-    sodoku_gadget<FieldT> g(pb, 3);
+    sudoku_gadget<FieldT> g(pb, n);
     g.generate_r1cs_constraints();
 
     auto new_puzzle = convertPuzzleToBool(puzzle);
@@ -136,7 +137,8 @@ boost::optional<std::tuple<r1cs_ppzksnark_proof<ppzksnark_ppT>,std::vector<std::
 }
 
 template<typename ppzksnark_ppT>
-bool verify_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_key,
+bool verify_proof(uint32_t n,
+                  r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_key,
                   r1cs_ppzksnark_proof<ppzksnark_ppT> proof,
                   vector<uint8_t> &puzzle,
                   vector<bool> &h_of_key,
@@ -147,7 +149,7 @@ bool verify_proof(r1cs_ppzksnark_verification_key<ppzksnark_ppT> verification_ke
 
     auto new_puzzle = convertPuzzleToBool(puzzle);
 
-    const r1cs_primary_input<FieldT> input = sodoku_input_map<FieldT>(3, new_puzzle, h_of_key, encrypted_solution);
+    const r1cs_primary_input<FieldT> input = sudoku_input_map<FieldT>(n, new_puzzle, h_of_key, encrypted_solution);
 
     return r1cs_ppzksnark_verifier_strong_IC<ppzksnark_ppT>(verification_key, input, proof);
 }

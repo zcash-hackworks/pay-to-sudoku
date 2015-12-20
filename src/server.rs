@@ -33,6 +33,7 @@ extern crate serde;
 use std::net::{TcpListener,TcpStream};
 use std::io::{self, Read, Write};
 use self::ffi::*;
+use self::util::*;
 use whiteread::parse_line;
 use bincode::serde::{serialize_into, deserialize_from};
 use bincode::SizeLimit::Infinite;
@@ -41,6 +42,7 @@ use std::borrow::Cow;
 use hex::{ToHex, FromHex};
 
 mod ffi;
+mod util;
 
 fn main() {
     initialize();
@@ -85,11 +87,11 @@ fn handle_client(stream: &mut TcpStream, ctx: Context, pk: &[i8], vk: &[i8]) {
     }
 
     loop {
-        println!("Specify a sodoku puzzle! {0} lines with {0} numbers (whitespace delimited).", ctx.n*ctx.n);
+        println!("Specify a sudoku puzzle! {0} lines with {0} numbers (whitespace delimited).", ctx.n*ctx.n);
         println!("0 represents a blank cell.");
         println!("Go!");
 
-        let puzzle = get_sodoku_from_stdin(ctx.n*ctx.n);
+        let puzzle = get_sudoku_from_stdin(ctx.n*ctx.n);
 
         println!("Sending puzzle over the network...");
 
@@ -117,35 +119,4 @@ fn handle_client(stream: &mut TcpStream, ctx: Context, pk: &[i8], vk: &[i8]) {
             println!("The remote end provided a proof that wasn't valid!");
         }
     }
-}
-
-fn print_sudoku(dim: usize, grid: &[u8]) {
-    for y in 0..dim {
-        for x in 0..dim {
-            print!("{}", grid[y*dim + x]);
-            if x != (dim-1) || y != (dim-1) {
-                print!(" ");
-            }
-        }
-        println!("");
-    }
-    println!("");
-}
-
-fn prompt<T: whiteread::White>(prompt: &str) -> T {
-    print!("{}", prompt);
-    io::stdout().flush().unwrap();
-    parse_line().unwrap()
-}
-
-fn get_sodoku_from_stdin(dimension: usize) -> Vec<u8> {
-    let mut acc = Vec::with_capacity(dimension*dimension);
-
-    for _ in 0..dimension {
-        let v: Vec<u8> = parse_line().unwrap();
-
-        acc.extend(v.into_iter());
-    }
-
-    acc
 }
