@@ -67,7 +67,8 @@ fn main() {
 
 
     if let Some(ref matches) = matches.subcommand_matches("test") {
-        let n = 3;
+        println!("Loading proving/verifying keys...");
+        let n: usize = matches.value_of("n").unwrap_or("3").parse().unwrap();
 
         let ctx = {
             let pk = decompress(&format!("{}.pk", n));
