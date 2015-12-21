@@ -1,3 +1,5 @@
+#![feature(test)]
+
 extern crate whiteread;
 extern crate libc;
 extern crate bincode;
@@ -6,6 +8,7 @@ extern crate hex;
 extern crate serde;
 extern crate clap;
 extern crate flate2;
+extern crate test;
 
 use std::net::{TcpListener,TcpStream};
 use std::io::{self, Read, Write};

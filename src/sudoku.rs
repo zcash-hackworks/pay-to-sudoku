@@ -235,3 +235,16 @@ impl Sudoku {
         }
     }
 }
+
+mod test {
+    use super::Sudoku;
+    use test::Bencher;
+
+    #[bench]
+    fn bench_solving(b: &mut Bencher) {
+        b.iter(|| {
+            let puzzle = Sudoku::gen(3);
+            let solution = Sudoku::import_and_solve(3, &puzzle);
+        });
+    }
+}

@@ -14,8 +14,10 @@ all:
 	$(CXX) -o sha256.o src/sha256.c -c $(CXXFLAGS)
 	$(CXX) -shared -o libmysnark.so lib.o sha256.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 	mkdir -p target/debug
+	mkdir -p target/release
 	cp libmysnark.so target/debug
+	cp libmysnark.so target/release
 
 clean:
 	$(RM) sha256.o
-	$(RM) lib.o libmysnark.so target/debug/libmysnark.so
+	$(RM) lib.o libmysnark.so target/debug/libmysnark.so target/release/libmysnark.so
