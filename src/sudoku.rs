@@ -6,31 +6,31 @@ use rand::Rng;
 
 #[derive(Clone)]
 struct Possible {
-    v: Rc<RefCell<Vec<usize>>>
+    v: Rc<RefCell<[bool; 256]>>
 }
 
 impl Possible {
     fn new(dimension: usize) -> Possible {
         Possible {
-            v: Rc::new(RefCell::new((1..(dimension+1)).collect()))
+            v: Rc::new(RefCell::new([true; 256]))
         }
     }
 
     fn filter_candidates(&self, candidates: &mut Vec<usize>) {
         let v = self.v.borrow();
-        candidates.retain(|entry| v.contains(entry));
+        candidates.retain(|entry| v[*entry]);
     }
 
     fn remove(&self, candidate: usize) {
         let mut v = self.v.borrow_mut();
 
-        v.retain(|&entry| entry != candidate);
+        v[candidate] = false;
     }
 
     fn add(&self, candidate: usize) {
         let mut v = self.v.borrow_mut();
 
-        v.push(candidate);
+        v[candidate] = true;
     }
 }
 
