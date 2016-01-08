@@ -243,8 +243,8 @@ mod test {
     #[bench]
     fn bench_solving(b: &mut Bencher) {
         b.iter(|| {
-            let puzzle = Sudoku::gen(3);
-            let solution = Sudoku::import_and_solve(3, &puzzle);
+            let puzzle = Sudoku::gen(8);
+            let solution = Sudoku::import_and_solve(8, &puzzle);
         });
     }
 }

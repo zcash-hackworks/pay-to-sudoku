@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "snark.hpp"
 
-typedef void (*keypair_callback)(void*, const char*, int32_t, const char*, int32_t);
+typedef void (*keypair_callback)(void*, const char*, size_t, const char*, size_t);
 typedef void (*proof_callback)(void*, uint32_t, const uint8_t*, const char*, int32_t);
 
 extern "C" void decrypt_solution(uint32_t n, uint8_t *enc, unsigned char* key) {

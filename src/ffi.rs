@@ -1,6 +1,6 @@
 use std::mem;
 use std::slice;
-use libc::{c_char, uint8_t, uint32_t, int32_t, c_void};
+use libc::{size_t, c_char, uint8_t, uint32_t, int32_t, c_void};
 
 #[repr(C)]
 struct Keypair;
@@ -14,7 +14,7 @@ pub struct Context {
 #[link(name = "mysnark")]
 extern "C" {
     pub fn mysnark_init_public_params();
-    fn gen_keypair(n: uint32_t, h: *mut c_void, cb: extern fn(*mut c_void, *const c_char, int32_t, *const c_char, int32_t));
+    fn gen_keypair(n: uint32_t, h: *mut c_void, cb: extern fn(*mut c_void, *const c_char, size_t, *const c_char, size_t));
     fn load_keypair(pk_s: *const c_char, pk_l: int32_t, vk_s: *const c_char, vk_l: int32_t)
         -> *const Keypair;
     fn gen_proof(keypair: *const Keypair, h: *mut c_void,
@@ -48,7 +48,7 @@ extern "C" fn handle_proof_callback(cb: *mut c_void, n: uint32_t, encrypted_solu
     }
 }
 
-extern "C" fn handle_keypair_callback(cb: *mut c_void, pk_s: *const c_char, pk_l: int32_t, vk_s: *const c_char, vk_l: int32_t)
+extern "C" fn handle_keypair_callback(cb: *mut c_void, pk_s: *const c_char, pk_l: size_t, vk_s: *const c_char, vk_l: size_t)
 {
     unsafe {
         let pk: &[i8] = mem::transmute(slice::from_raw_parts(pk_s, pk_l as usize));
