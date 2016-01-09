@@ -1,7 +1,6 @@
 # todo
 
-* automated sudoku solver
-* cache pk/vk
+* better automated sudoku solver (current one sucks for bigger than 9x9 sudokus)
 * clean up code
 * bitcoin transaction stuff
 
@@ -25,8 +24,3 @@ and constructs `K`, `C`, and `E`. Bob constructs a `Proof`. Bob sends Alice (Pro
 proof. Alice sends a CLTV transaction over the blockchain to Bob with the added constraint that Bob must produce
 the preimage of `C` (aka `K`). After Bob redeems the TxOut, Alice uses `K` to decrypt `E`, producing `S`. If Bob
 does not redeem the TxOut, Alice recovers her value but does not obtain `S`.
-
-todo:
-
-* write better tests
-* write interface for interacting with the snark
