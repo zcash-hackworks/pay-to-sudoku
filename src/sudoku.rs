@@ -80,7 +80,7 @@ pub struct Sudoku {
 }
 
 impl Sudoku {
-    pub fn gen(n: usize) -> Vec<usize> {
+    pub fn gen(n: usize) -> Vec<u8> {
         use rand::thread_rng;
         let mut rng = thread_rng();
 
@@ -90,7 +90,7 @@ impl Sudoku {
         grid.export()
     }
 
-    pub fn import_and_solve(n: usize, puzzle: &[usize]) -> Option<Vec<usize>> {
+    pub fn import_and_solve(n: usize, puzzle: &[u8]) -> Option<Vec<u8>> {
         use rand::thread_rng;
         let mut rng = thread_rng();
 
@@ -136,21 +136,21 @@ impl Sudoku {
         }
     }
 
-    pub fn inject(&self, other: &[usize]) {
+    pub fn inject(&self, other: &[u8]) {
         for (i, &to) in other.iter().enumerate() {
             if to != 0 {
-                self.cells[i].set(to);
+                self.cells[i].set(to as usize);
             }
         }
     }
 
-    pub fn export(&self) -> Vec<usize> {
+    pub fn export(&self) -> Vec<u8> {
         let mut acc = vec![];
 
         for i in 0..(self.dimension * self.dimension) {
             match self.cells[i].get() {
                 Some(val) => {
-                    acc.push(val);
+                    acc.push(val as u8);
                 },
                 None => {
                     acc.push(0);
@@ -231,7 +231,7 @@ impl Sudoku {
 
     pub fn clearsome<R: Rng>(&mut self, rng: &mut R) {
         for i in 0..(self.dimension * self.dimension) {
-            if rng.gen_weighted_bool(5) {
+            if rng.gen_weighted_bool(2) {
                 self.cells[i].unset();
             }
         }

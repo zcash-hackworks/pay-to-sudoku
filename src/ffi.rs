@@ -29,7 +29,7 @@ extern "C" {
     fn decrypt_solution(n: uint32_t, enc: *mut uint8_t, key: *const uint8_t);
     fn snark_verify(keypair: *const Keypair,
                     n: uint32_t,
-                    proof: *const c_char,
+                    proof: *const uint8_t,
                     proof_len: int32_t,
                     puzzle: *const uint8_t,
                     h_of_key: *const uint8_t,
@@ -89,8 +89,8 @@ pub fn get_context(pk: &[u8], vk: &[u8], n: usize) -> Context {
     }
 }
 
-pub fn prove<F: for<'a> FnMut(&'a [u8], &'a [i8])>(ctx: Context, puzzle: &[u8], solution: &[u8], key: &[u8], h_of_key: &[u8], mut f: F) -> bool {
-    let mut cb: &mut for<'a> FnMut(&'a [u8], &'a [i8]) = &mut f;
+pub fn prove<F: for<'a> FnMut(&'a [u8], &'a [u8])>(ctx: &Context, puzzle: &[u8], solution: &[u8], key: &[u8], h_of_key: &[u8], mut f: F) -> bool {
+    let mut cb: &mut for<'a> FnMut(&'a [u8], &'a [u8]) = &mut f;
 
     let cells = ctx.n.pow(4);
     assert_eq!(puzzle.len(), cells);
@@ -110,7 +110,7 @@ pub fn decrypt(ctx: Context, enc_solution: &mut [u8], key: &[u8])
     unsafe { decrypt_solution(ctx.n as u32, &mut enc_solution[0], &key[0]); }
 }
 
-pub fn verify(ctx: Context, proof: &[i8], puzzle: &[u8], h_of_key: &[u8], encrypted_solution: &[u8]) -> bool
+pub fn verify(ctx: &Context, proof: &[u8], puzzle: &[u8], h_of_key: &[u8], encrypted_solution: &[u8]) -> bool
 {
     assert_eq!(ctx.n.pow(4), encrypted_solution.len());
     assert_eq!(ctx.n.pow(4), puzzle.len());

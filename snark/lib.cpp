@@ -23,6 +23,8 @@ extern "C" void decrypt_solution(uint32_t n, uint8_t *enc, unsigned char* key) {
 }
 
 extern "C" void mysnark_init_public_params() {
+    libsnark::inhibit_profiling_info = true;
+    libsnark::inhibit_profiling_counters = true;
     default_r1cs_ppzksnark_pp::init_public_params();
 }
 
