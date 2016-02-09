@@ -183,10 +183,10 @@ fn handle_client(stream: &mut TcpStream, ctx: &Context, n: usize) -> Result<(), 
 
     println!("Waiting for proof that the client has a solution...");
 
-    let proof: Cow<[u8]> = deserialize_from(stream, Infinite).unwrap();
-    let encrypted_solution: Cow<[u8]> = deserialize_from(stream, Infinite).unwrap();
+    let proof: Cow<[u8]> = try!(deserialize_from(stream, Infinite));
+    let encrypted_solution: Cow<[u8]> = try!(deserialize_from(stream, Infinite));
     let mut encrypted_solution: Vec<u8> = encrypted_solution.into_owned();
-    let mut h_of_key: Vec<u8> = deserialize_from(stream, Infinite).unwrap();
+    let mut h_of_key: Vec<u8> = try!(deserialize_from(stream, Infinite));
 
     println!("Verifying proof.");
 
@@ -244,6 +244,12 @@ struct ProtoError;
 
 impl From<bincode::serde::SerializeError> for ProtoError {
     fn from(a: bincode::serde::SerializeError) -> ProtoError {
+        ProtoError
+    }
+}
+
+impl From<bincode::serde::DeserializeError> for ProtoError {
+    fn from(a: bincode::serde::DeserializeError) -> ProtoError {
         ProtoError
     }
 }
