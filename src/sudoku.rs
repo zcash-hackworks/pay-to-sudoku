@@ -229,7 +229,7 @@ impl Sudoku {
 
     pub fn clearsome<R: Rng>(&mut self, rng: &mut R) {
         for i in 0..(self.dimension * self.dimension) {
-            if rng.gen_weighted_bool(2) {
+            if rng.gen_weighted_bool(5) {
                 self.cells[i].unset();
             }
         }

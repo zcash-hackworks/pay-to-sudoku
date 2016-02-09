@@ -3,14 +3,6 @@ authors = ["ewillbefull@gmail.com"]
 name = "pay-to-sudoku"
 version = "0.0.1"
 
-[[bin]]
-name = "server"
-path = "src/server.rs"
-
-#[[bin]]
-#name = "client"
-#path = "src/client.rs"
-
 [dependencies]
 bincode = "0.4.0"
 bzip2 = "0.2.3"

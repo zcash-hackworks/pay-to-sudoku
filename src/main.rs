@@ -74,10 +74,6 @@ fn main() {
         });
     }
 
-    if let Some(ref matches) = matches.subcommand_matches("serve") {
-        
-    }
-
     if let Some(ref matches) = matches.subcommand_matches("test") {
         println!("Loading proving/verifying keys...");
         let n: usize = matches.value_of("n").unwrap().parse().unwrap();
