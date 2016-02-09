@@ -10,14 +10,14 @@ LDLIBS += -L $(DEPINST)/lib -Wl,-rpath $(DEPINST)/lib -L . -lsnark -lgmpxx -lgmp
 LDLIBS += -lboost_system
 
 all:
-	$(CXX) -o lib.o src/lib.cpp -c $(CXXFLAGS)
-	$(CXX) -o sha256.o src/sha256.c -c $(CXXFLAGS)
-	$(CXX) -shared -o libmysnark.so lib.o sha256.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) -o snark/lib.o snark/lib.cpp -c $(CXXFLAGS)
+	$(CXX) -o snark/sha256.o snark/sha256.c -c $(CXXFLAGS)
+	$(CXX) -shared -o libmysnark.so snark/lib.o snark/sha256.o $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 	mkdir -p target/debug
 	mkdir -p target/release
 	cp libmysnark.so target/debug
 	cp libmysnark.so target/release
 
 clean:
-	$(RM) sha256.o
-	$(RM) lib.o libmysnark.so target/debug/libmysnark.so target/release/libmysnark.so
+	$(RM) snark/sha256.o
+	$(RM) snark/lib.o libmysnark.so target/debug/libmysnark.so target/release/libmysnark.so

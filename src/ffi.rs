@@ -1,3 +1,8 @@
+/*
+this is stuff for interacting with the sudoku proving stuff.
+the API is really messy and I hope to replace all of this with bellman.
+*/
+
 use std::mem;
 use std::slice;
 use libc::{size_t, c_char, uint8_t, uint32_t, int32_t, c_void};

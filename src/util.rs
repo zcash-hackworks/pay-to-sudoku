@@ -1,3 +1,7 @@
+/*
+utilities for things
+*/
+
 use std::io::{self, Read, Write};
 use whiteread::{self,parse_line};
 use std::fs;

@@ -1,4 +1,6 @@
 // solver for sudoku grids
+// not that good
+
 use std::rc::Rc;
 use std::cell::{RefCell,Cell};
 use std::collections::HashMap;
