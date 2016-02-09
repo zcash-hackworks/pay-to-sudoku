@@ -11,7 +11,7 @@ use flate2::Compression;
 pub fn print_sudoku(dim: usize, grid: &[u8]) {
     for y in 0..dim {
         for x in 0..dim {
-            print!("{}", grid[y*dim + x]);
+            print!("{:02}", grid[y*dim + x]);
             if x != (dim-1) || y != (dim-1) {
                 print!(" ");
             }
