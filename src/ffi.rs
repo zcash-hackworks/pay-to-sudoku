@@ -103,7 +103,7 @@ pub fn prove<F: for<'a> FnMut(&'a [u8], &'a [u8])>(ctx: &Context, puzzle: &[u8],
     }
 }
 
-pub fn decrypt(ctx: Context, enc_solution: &mut [u8], key: &[u8])
+pub fn decrypt(ctx: &Context, enc_solution: &mut [u8], key: &[u8])
 {
     assert_eq!(ctx.n.pow(4), enc_solution.len());
     assert_eq!(key.len(), 32);

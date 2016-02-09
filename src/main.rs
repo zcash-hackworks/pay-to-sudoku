@@ -175,25 +175,39 @@ fn handle_client(stream: &mut TcpStream, ctx: &Context, n: usize) -> Result<(), 
     println!("Generating puzzle...");
     let puzzle = Sudoku::gen(n);
 
+    print_sudoku(n*n, &puzzle);
+
+    println!("Sending to the client.");
+
     try!(serialize_into(stream, &puzzle, Infinite));
 
     println!("Waiting for proof that the client has a solution...");
 
     let proof: Cow<[u8]> = deserialize_from(stream, Infinite).unwrap();
     let encrypted_solution: Cow<[u8]> = deserialize_from(stream, Infinite).unwrap();
+    let mut encrypted_solution: Vec<u8> = encrypted_solution.into_owned();
     let mut h_of_key: Vec<u8> = deserialize_from(stream, Infinite).unwrap();
 
     println!("Verifying proof.");
 
-    if (!verify(ctx, &proof, &puzzle, &h_of_key, &encrypted_solution)) {
-        println!("Proof is invalid!");
+    if verify(ctx, &proof, &puzzle, &h_of_key, &encrypted_solution) {
+        println!("Proof verified!");
 
-        return Err(ProtoError);
+        println!("Decrypting the solution with key which we presumably obtain via the bitcoin transaction...");
+
+        let key = vec![206, 64, 25, 10, 245, 205, 246, 107, 191, 157, 114, 181, 63, 40, 95, 134, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94];
+
+        decrypt(ctx, &mut encrypted_solution, &key);
+
+        println!("Decrypted solution:");
+        print_sudoku(n*n, &encrypted_solution);
+
+        return Ok(());
     }
 
-    println!("Proof verified!");
+    println!("Proof invalid!");
 
-    Ok(())
+    Err(ProtoError)
 }
 
 fn handle_server(stream: &mut TcpStream, ctx: &Context, n: usize) -> Result<(), ProtoError> {
