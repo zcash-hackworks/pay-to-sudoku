@@ -9,16 +9,16 @@ extern crate serde;
 extern crate clap;
 extern crate flate2;
 extern crate test;
+extern crate strason;
+#[macro_use] extern crate jsonrpc;
 
 use std::net::{TcpListener,TcpStream};
 use std::io::{self, Read, Write};
 use self::ffi::*;
 use self::sudoku::Sudoku;
 use self::util::*;
-use whiteread::parse_line;
 use bincode::serde::{serialize_into, deserialize_from};
 use bincode::SizeLimit::Infinite;
-use serde::bytes::Bytes;
 use std::borrow::Cow;
 use hex::{ToHex, FromHex};
 use clap::{App, Arg, SubCommand};
@@ -26,6 +26,7 @@ use clap::{App, Arg, SubCommand};
 mod sudoku;
 mod ffi;
 mod util;
+mod bitcoin;
 
 fn is_number(val: String) -> Result<(), String> {
     let n = val.parse::<usize>();
@@ -44,6 +45,10 @@ fn is_number(val: String) -> Result<(), String> {
 
 fn main() {
     initialize();
+
+    // connect to bitcoin json rpc
+
+    let mut rpc = jsonrpc::client::Client::new("http://127.0.0.1:1222/".into(), Some("username".to_string()), Some("password".to_string()));
 
     let matches = App::new("pay-to-sudoku")
                   .subcommand(SubCommand::with_name("gen")
@@ -103,7 +108,7 @@ fn main() {
 
         let mut stream = TcpStream::connect("127.0.0.1:25519").unwrap();
 
-        handle_server(&mut stream, &ctx, n);
+        handle_server(&mut stream, &ctx, n, &mut rpc);
     }
 
     if let Some(ref matches) = matches.subcommand_matches("serve") {
@@ -127,7 +132,7 @@ fn main() {
         for stream in listener.incoming() {
             match stream {
                 Ok(mut stream) => {
-                    handle_client(&mut stream, &ctx, n);
+                    handle_client(&mut stream, &ctx, n, &mut rpc);
                 },
                 Err(_) => {}
             }
@@ -169,7 +174,7 @@ fn main() {
     }
 }
 
-fn handle_client(stream: &mut TcpStream, ctx: &Context, n: usize) -> Result<(), ProtoError> {
+fn handle_client(stream: &mut TcpStream, ctx: &Context, n: usize, rpc: &mut jsonrpc::client::Client) -> Result<(), ProtoError> {
     println!("Connected!");
 
     println!("Generating puzzle...");
@@ -193,6 +198,27 @@ fn handle_client(stream: &mut TcpStream, ctx: &Context, n: usize) -> Result<(), 
     if verify(ctx, &proof, &puzzle, &h_of_key, &encrypted_solution) {
         println!("Proof verified!");
 
+        let redeem_pubkey: String = bitcoin::getpubkey(rpc);
+        let cltv_height: usize = bitcoin::getheight(rpc) + 100; // 100 blocks from now we can get a refund
+        let h_of_key: String = h_of_key.to_hex();
+
+        // send these details to the client so they can construct the same p2sh
+
+        try!(serialize_into(stream, &redeem_pubkey, Infinite));
+        try!(serialize_into(stream, &cltv_height, Infinite));
+
+        let solving_pubkey: String = try!(deserialize_from(stream, Infinite));
+
+        let p2sh = bitcoin::p2sh(rpc, &solving_pubkey, &redeem_pubkey, &h_of_key, cltv_height);
+
+        // send money
+        bitcoin::pay_for_sudoku(rpc, &p2sh);
+
+        // TODO: poll for the spend so we can get the preimage
+        //       decrypt the solution!
+
+        /*
+
         println!("Decrypting the solution with key which we presumably obtain via the bitcoin transaction...");
 
         let key = vec![206, 64, 25, 10, 245, 205, 246, 107, 191, 157, 114, 181, 63, 40, 95, 134, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94];
@@ -201,6 +227,7 @@ fn handle_client(stream: &mut TcpStream, ctx: &Context, n: usize) -> Result<(), 
 
         println!("Decrypted solution:");
         print_sudoku(n*n, &encrypted_solution);
+        */
 
         return Ok(());
     }
@@ -210,7 +237,7 @@ fn handle_client(stream: &mut TcpStream, ctx: &Context, n: usize) -> Result<(), 
     Err(ProtoError)
 }
 
-fn handle_server(stream: &mut TcpStream, ctx: &Context, n: usize) -> Result<(), ProtoError> {
+fn handle_server(stream: &mut TcpStream, ctx: &Context, n: usize, rpc: &mut jsonrpc::client::Client) -> Result<(), ProtoError> {
     println!("Waiting for server to give us a puzzle...");
     let puzzle: Vec<u8> = deserialize_from(stream, Infinite).unwrap();
 
@@ -235,6 +262,22 @@ fn handle_server(stream: &mut TcpStream, ctx: &Context, n: usize) -> Result<(), 
         serialize_into(stream, &proof, Infinite);
         serialize_into(stream, &encrypted_solution, Infinite);
         serialize_into(stream, &h_of_key, Infinite);
+
+        let h_of_key: String = h_of_key.to_hex();
+
+        let redeem_pubkey: String = deserialize_from(stream, Infinite).unwrap();
+        let cltv_height: usize = deserialize_from(stream, Infinite).unwrap();
+
+        let solving_pubkey = bitcoin::getpubkey(rpc);
+
+        let p2sh = bitcoin::p2sh(rpc, &solving_pubkey, &redeem_pubkey, &h_of_key, cltv_height);
+
+        serialize_into(stream, &solving_pubkey, Infinite);
+
+        // TODO:
+        // 1. poll for the transaction paying the p2sh address
+        // 2. when we get it, importpreimage and then spend it to ourselves!
+        // 3. profit!
     }));
 
     Ok(())
