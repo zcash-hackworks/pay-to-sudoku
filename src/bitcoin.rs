@@ -5,12 +5,45 @@
 use serde;
 use jsonrpc;
 use strason::Json;
+use hex::{ToHex, FromHex};
+use crypto::sha2::Sha256;
+use crypto::digest::Digest;
+
+pub fn get_preimage(client: &mut jsonrpc::client::Client, image: &[u8])
+-> Option<Vec<u8>>
+{
+    // import the preimage
+    let request = client.build_request("listtransactions".to_string(), vec!["*".into(), 10.into(), 0.into(), true.into()]);
+    let res = client.send_request(&request).unwrap().result.unwrap();
+    let res = res.array().unwrap();
+
+    for tx in res {
+        let tx = tx.object().unwrap();
+
+        for &(ref field, ref value) in tx {
+            if field == "preimage" {
+                let preimage = Vec::<u8>::from_hex(value.string().unwrap()).unwrap();
+                let mut image_compare: Vec<u8> = (0..32).map(|_| 0).collect();
+
+                let mut hash = Sha256::new();
+                hash.input(&preimage);
+                hash.result(&mut image_compare);
+
+                if &*image_compare == image {
+                    return Some(preimage);
+                }
+            }
+        }
+    }
+
+    None
+}
 
 pub fn solve_sudoku(client: &mut jsonrpc::client::Client,
                     key: &str,
                     txid: &str,
                     vout: usize
-                   )
+                   ) -> String
 {
     // import the preimage
     let request = client.build_request("importpreimage".to_string(), vec![key.into()]);
@@ -50,8 +83,10 @@ pub fn solve_sudoku(client: &mut jsonrpc::client::Client,
                     let request = client.build_request("sendrawtransaction".to_string(), vec![signed_tx.into()]);
                     let res: String = client.send_request(&request).unwrap().into_result::<String>().unwrap();
 
-                    println!("sent signed raw tx: {}", signed_tx);
-                    println!("txid: {}", res);
+                    //println!("sent signed raw tx: {}", signed_tx);
+                    //println!("txid: {}", res);
+
+                    res
                 },
                 Err(e) => panic!("error constructing transaction {:?}", e)
             }
@@ -64,7 +99,7 @@ pub fn poll_for_payment(client: &mut jsonrpc::client::Client,
                         p2sh: &str
 ) -> Option<(String, usize)>
 {
-    let request = client.build_request("listtransactions".to_string(), vec!["*".into(), 99999999.into(), 0.into(), true.into()]);
+    let request = client.build_request("listtransactions".to_string(), vec!["*".into(), 100.into(), 0.into(), true.into()]);
     let res = client.send_request(&request).unwrap().result.unwrap();
     let res = res.array().unwrap();
 

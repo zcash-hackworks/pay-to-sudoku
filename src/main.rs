@@ -10,6 +10,7 @@ extern crate clap;
 extern crate flate2;
 extern crate test;
 extern crate strason;
+extern crate crypto;
 #[macro_use] extern crate jsonrpc;
 
 use std::net::{TcpListener,TcpStream};
@@ -200,7 +201,7 @@ fn handle_client(stream: &mut TcpStream, ctx: &Context, n: usize, rpc: &mut json
 
         let redeem_pubkey: String = bitcoin::getpubkey(rpc);
         let cltv_height: usize = bitcoin::getheight(rpc) + 100; // 100 blocks from now we can get a refund
-        let h_of_key: String = h_of_key.to_hex();
+        let h_of_key_str: String = h_of_key.to_hex();
 
         // send these details to the client so they can construct the same p2sh
 
@@ -209,25 +210,26 @@ fn handle_client(stream: &mut TcpStream, ctx: &Context, n: usize, rpc: &mut json
 
         let solving_pubkey: String = try!(deserialize_from(stream, Infinite));
 
-        let p2sh = bitcoin::p2sh(rpc, &solving_pubkey, &redeem_pubkey, &h_of_key, cltv_height);
+        let p2sh = bitcoin::p2sh(rpc, &solving_pubkey, &redeem_pubkey, &h_of_key_str, cltv_height);
 
         // send money
         bitcoin::pay_for_sudoku(rpc, &p2sh);
 
-        // TODO: poll for the spend so we can get the preimage
-        //       decrypt the solution!
+        println!("Money was sent for the solution, waiting to get the key from the blockchain...");
 
-        /*
+        loop {
+            if let Some(preimage) = bitcoin::get_preimage(rpc, &h_of_key) {
+                println!("Atomic swap confirmed, decrypting encrypted solution...");
+                decrypt(ctx, &mut encrypted_solution, &preimage);
 
-        println!("Decrypting the solution with key which we presumably obtain via the bitcoin transaction...");
+                println!("Decrypted solution:");
+                print_sudoku(n*n, &encrypted_solution);
 
-        let key = vec![206, 64, 25, 10, 245, 205, 246, 107, 191, 157, 114, 181, 63, 40, 95, 134, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94];
+                break;
+            }
 
-        decrypt(ctx, &mut encrypted_solution, &key);
-
-        println!("Decrypted solution:");
-        print_sudoku(n*n, &encrypted_solution);
-        */
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        }
 
         return Ok(());
     }
@@ -283,13 +285,17 @@ fn handle_server(stream: &mut TcpStream, ctx: &Context, n: usize, rpc: &mut json
                 vout = _vout;
                 break;
             }
+
+            std::thread::sleep(std::time::Duration::from_secs(1));
         }
 
         let key: String = key.to_hex();
 
-        bitcoin::solve_sudoku(rpc, &key, &txid, vout);
+        println!("Received payment for puzzle in txid {}", txid);
 
-        println!("profit was had!");
+        let txid = bitcoin::solve_sudoku(rpc, &key, &txid, vout);
+
+        println!("Exchanged sudoku solution for money in txid {}", txid);
     }));
 
     Ok(())
