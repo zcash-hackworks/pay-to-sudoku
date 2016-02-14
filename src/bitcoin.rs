@@ -1,6 +1,101 @@
+// non-existent error handling and manual parsing
+// of the serialized results, not exactly a model
+// for others
+
 use serde;
 use jsonrpc;
 use strason::Json;
+
+pub fn solve_sudoku(client: &mut jsonrpc::client::Client,
+                    key: &str,
+                    txid: &str,
+                    vout: usize
+                   )
+{
+    // import the preimage
+    let request = client.build_request("importpreimage".to_string(), vec![key.into()]);
+    let res = client.send_request(&request).unwrap();
+
+    // get receive address
+    let request = client.build_request("getnewaddress".to_string(), vec![]);
+
+    match client.send_request(&request).and_then(|res| res.into_result::<String>()) {
+        Ok(addr) => {
+            let request = client.build_request("createrawtransaction".to_string(), vec![
+                Json::from_str(&format!("[{{\"txid\":\"{}\",\"vout\":{}}}]", txid, vout)).expect("parsing inputs"),
+                Json::from_str(&format!("{{\"{}\":0.09}}", addr)).expect("parsing outputs")
+            ]);
+            match client.send_request(&request).and_then(|res| res.into_result::<String>()) {
+                Ok(tx) => {
+                    let request = client.build_request("signrawtransaction".to_string(), vec![tx.into()]);
+                    let res = client.send_request(&request).unwrap().result.unwrap();
+
+                    let res = res.object().unwrap();
+
+                    let mut signed_tx: Option<&str> = None;
+                    let mut complete = false;
+
+                    for &(ref field, ref value) in res {
+                        if field == "hex" {
+                            signed_tx = value.string();
+                        } else if field == "complete" {
+                            complete = value.bool().unwrap();
+                        }
+                    }
+
+                    assert_eq!(complete, true);
+
+                    let signed_tx = signed_tx.unwrap();
+
+                    let request = client.build_request("sendrawtransaction".to_string(), vec![signed_tx.into()]);
+                    let res: String = client.send_request(&request).unwrap().into_result::<String>().unwrap();
+
+                    println!("sent signed raw tx: {}", signed_tx);
+                    println!("txid: {}", res);
+                },
+                Err(e) => panic!("error constructing transaction {:?}", e)
+            }
+        },
+        Err(e) => panic!("error getting new address {:?}", e)
+    }
+}
+
+pub fn poll_for_payment(client: &mut jsonrpc::client::Client,
+                        p2sh: &str
+) -> Option<(String, usize)>
+{
+    let request = client.build_request("listtransactions".to_string(), vec!["*".into(), 99999999.into(), 0.into(), true.into()]);
+    let res = client.send_request(&request).unwrap().result.unwrap();
+    let res = res.array().unwrap();
+
+    for tx in res {
+        let tx = tx.object().unwrap();
+        let mut found = false;
+        let mut confirmations = 0;
+        let mut txid = None;
+        let mut vout = None;
+
+        for &(ref field, ref value) in tx {
+            if field == "address" {
+                if value.string().unwrap() == p2sh {
+                    found = true;
+                }
+            } else if field == "txid" {
+                txid = value.string();
+            } else if field == "vout" {
+                vout = value.num();
+            } else if field == "confirmations" {
+                confirmations = value.num().unwrap().parse().unwrap();
+            }
+        }
+
+        if found && confirmations > 0 {
+            return Some((txid.unwrap().into(), vout.unwrap().parse().unwrap()));
+        }
+    }
+
+    None
+}
 
 pub fn pay_for_sudoku(client: &mut jsonrpc::client::Client,
                       p2sh: &str)

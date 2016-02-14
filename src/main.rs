@@ -46,10 +46,6 @@ fn is_number(val: String) -> Result<(), String> {
 fn main() {
     initialize();
 
-    // connect to bitcoin json rpc
-
-    let mut rpc = jsonrpc::client::Client::new("http://127.0.0.1:1222/".into(), Some("username".to_string()), Some("password".to_string()));
-
     let matches = App::new("pay-to-sudoku")
                   .subcommand(SubCommand::with_name("gen")
                               .about("Generates a proving/verifying zkSNARK keypair")
@@ -92,6 +88,8 @@ fn main() {
     }
 
     if let Some(ref matches) = matches.subcommand_matches("client") {
+        let mut rpc = jsonrpc::client::Client::new("http://127.0.0.1:1223/".into(), Some("username".to_string()), Some("password".to_string()));
+
         println!("Loading proving/verifying keys...");
         let n: usize = matches.value_of("n").unwrap().parse().unwrap();
 
@@ -112,6 +110,8 @@ fn main() {
     }
 
     if let Some(ref matches) = matches.subcommand_matches("serve") {
+        let mut rpc = jsonrpc::client::Client::new("http://127.0.0.1:1222/".into(), Some("username".to_string()), Some("password".to_string()));
+
         println!("Loading proving/verifying keys...");
         let n: usize = matches.value_of("n").unwrap().parse().unwrap();
 
@@ -274,10 +274,22 @@ fn handle_server(stream: &mut TcpStream, ctx: &Context, n: usize, rpc: &mut json
 
         serialize_into(stream, &solving_pubkey, Infinite);
 
-        // TODO:
-        // 1. poll for the transaction paying the p2sh address
-        // 2. when we get it, importpreimage and then spend it to ourselves!
-        // 3. profit!
+        let mut txid;
+        let mut vout;
+
+        loop {
+            if let Some((_txid, _vout)) = bitcoin::poll_for_payment(rpc, &p2sh) {
+                txid = _txid;
+                vout = _vout;
+                break;
+            }
+        }
+
+        let key: String = key.to_hex();
+
+        bitcoin::solve_sudoku(rpc, &key, &txid, vout);
+
+        println!("profit was had!");
     }));
 
     Ok(())
