@@ -47,6 +47,8 @@ fn is_number(val: String) -> Result<(), String> {
 fn main() {
     initialize();
 
+    let mut rpc = jsonrpc::client::Client::new("http://127.0.0.1:8332/".into(), Some("username".to_string()), Some("password".to_string()));
+
     let matches = App::new("pay-to-sudoku")
                   .subcommand(SubCommand::with_name("gen")
                               .about("Generates a proving/verifying zkSNARK keypair")
@@ -89,8 +91,6 @@ fn main() {
     }
 
     if let Some(ref matches) = matches.subcommand_matches("client") {
-        let mut rpc = jsonrpc::client::Client::new("http://127.0.0.1:1223/".into(), Some("username".to_string()), Some("password".to_string()));
-
         println!("Loading proving/verifying keys...");
         let n: usize = matches.value_of("n").unwrap().parse().unwrap();
 
@@ -111,8 +111,6 @@ fn main() {
     }
 
     if let Some(ref matches) = matches.subcommand_matches("serve") {
-        let mut rpc = jsonrpc::client::Client::new("http://127.0.0.1:1222/".into(), Some("username".to_string()), Some("password".to_string()));
-
         println!("Loading proving/verifying keys...");
         let n: usize = matches.value_of("n").unwrap().parse().unwrap();
 
