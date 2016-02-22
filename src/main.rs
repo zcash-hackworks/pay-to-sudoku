@@ -23,6 +23,9 @@ use bincode::SizeLimit::Infinite;
 use std::borrow::Cow;
 use hex::{ToHex, FromHex};
 use clap::{App, Arg, SubCommand};
+use crypto::sha2::Sha256;
+use rand::{Rng,thread_rng};
+use crypto::digest::Digest;
 
 mod sudoku;
 mod ffi;
@@ -248,8 +251,14 @@ fn handle_server(stream: &mut TcpStream, ctx: &Context, n: usize, rpc: &mut json
     let solution: Vec<u8> = Sudoku::import_and_solve(n, &puzzle).unwrap();
     print_sudoku(n*n, &solution);
 
-    let key = vec![206, 64, 25, 10, 245, 205, 246, 107, 191, 157, 114, 181, 63, 40, 95, 134, 6, 178, 210, 43, 243, 10, 217, 251, 246, 248, 0, 21, 86, 194, 100, 94];
-    let h_of_key = vec![253, 199, 66, 55, 24, 155, 80, 121, 138, 60, 36, 201, 186, 221, 164, 65, 194, 53, 192, 159, 252, 7, 194, 24, 200, 217, 57, 55, 45, 204, 71, 9];
+    let mut rng = thread_rng();
+    let key = (0..32).map(|_| rng.gen()).collect::<Vec<u8>>();
+    let mut h_of_key: Vec<u8> = (0..32).map(|_| 0).collect();
+    {
+        let mut hash = Sha256::new();
+        hash.input(&key);
+        hash.result(&mut h_of_key);
+    }
 
     println!("Generating proof...");
 

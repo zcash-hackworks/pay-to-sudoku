@@ -22,16 +22,20 @@ pub fn get_preimage(client: &mut jsonrpc::client::Client, image: &[u8])
 
         for &(ref field, ref value) in tx {
             if field == "preimage" {
-                let preimage = Vec::<u8>::from_hex(value.string().unwrap()).unwrap();
-                let mut image_compare: Vec<u8> = (0..32).map(|_| 0).collect();
+		let value = value.array().unwrap();
 
-                let mut hash = Sha256::new();
-                hash.input(&preimage);
-                hash.result(&mut image_compare);
+		for preimage in value {
+			let preimage = Vec::<u8>::from_hex(preimage.string().unwrap()).unwrap();
+	                let mut image_compare: Vec<u8> = (0..32).map(|_| 0).collect();
 
-                if &*image_compare == image {
-                    return Some(preimage);
-                }
+	                let mut hash = Sha256::new();
+	                hash.input(&preimage);
+	                hash.result(&mut image_compare);
+
+	                if &*image_compare == image {
+	                    return Some(preimage);
+	                }
+		}
             }
         }
     }
@@ -137,6 +141,8 @@ pub fn pay_for_sudoku(client: &mut jsonrpc::client::Client,
 {
     let request = client.build_request("sendtoaddress".to_string(), vec![p2sh.into(), "0.1".into()]);
     let res = client.send_request(&request).unwrap();
+//
+//    println!("res: {}", res.into_result::<String>().unwrap());
 }
 
 pub fn p2sh(client: &mut jsonrpc::client::Client,
