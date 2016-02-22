@@ -259,7 +259,7 @@ fn handle_server(stream: &mut TcpStream, ctx: &Context, n: usize, rpc: &mut json
         hash.input(&key);
         hash.result(&mut h_of_key);
     }
-
+    
     println!("Generating proof...");
 
     assert!(prove(ctx, &puzzle, &solution, &key, &h_of_key, |encrypted_solution, proof| {
