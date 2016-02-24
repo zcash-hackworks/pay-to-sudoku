@@ -152,7 +152,7 @@ pub fn p2sh(client: &mut jsonrpc::client::Client,
             cltv_height: usize
            ) -> String
 {
-    let request = client.build_request("createatomicswap".to_string(), vec![solving_pubkey.into(), refund_pubkey.into(), image.into(), cltv_height.into()]);
+    let request = client.build_request("createhtlc".to_string(), vec![solving_pubkey.into(), refund_pubkey.into(), image.into(), cltv_height.into()]);
     let res = client.send_request(&request).unwrap().result.unwrap();
     let res = res.object().unwrap();
 
