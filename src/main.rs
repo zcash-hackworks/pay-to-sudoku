@@ -4,6 +4,7 @@ extern crate whiteread;
 extern crate libc;
 extern crate bincode;
 extern crate rand;
+extern crate thread_scoped;
 extern crate hex;
 extern crate serde;
 extern crate clap;
@@ -25,7 +26,10 @@ use hex::{ToHex, FromHex};
 use clap::{App, Arg, SubCommand};
 use crypto::sha2::Sha256;
 use rand::{Rng,thread_rng};
+use std::sync::mpsc::channel;
+use thread_scoped::scoped;
 use crypto::digest::Digest;
+use std::sync::{Arc,Mutex};
 
 mod sudoku;
 mod ffi;
@@ -283,11 +287,44 @@ fn handle_server(stream: &mut TcpStream, ctx: &Context, n: usize, rpc: &mut json
 
         serialize_into(stream, &solving_pubkey, Infinite);
 
+        {
+            let (tx, rx) = channel();
+            let rx = Arc::new(Mutex::new(rx));
+
+            unsafe {
+                let derp = scoped(|| {
+                    let mut old_confirmations: isize = -1;
+
+                    loop {
+                        let mut confirmations: isize = -1;
+                        bitcoin::poll_for_payment(rpc, &p2sh, &mut confirmations);
+
+                        if confirmations != old_confirmations {
+                            old_confirmations = confirmations;
+
+                            println!("I have {} confirmations.", confirmations);
+                        }
+
+                        std::thread::sleep(std::time::Duration::from_secs(1));
+
+                        if (rx.lock().unwrap().try_recv().is_ok()) {
+                            break;
+                        }
+                    }
+                });
+
+                prompt::<String>("Press enter when ready to spend.\n");
+                tx.send(());
+
+                drop(derp);
+            }
+        }
+
         let mut txid;
         let mut vout;
 
         loop {
-            if let Some((_txid, _vout)) = bitcoin::poll_for_payment(rpc, &p2sh) {
+            if let Some((_txid, _vout)) = bitcoin::poll_for_payment(rpc, &p2sh, &mut 0) {
                 txid = _txid;
                 vout = _vout;
                 break;

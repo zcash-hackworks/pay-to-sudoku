@@ -21,10 +21,13 @@ pub fn print_sudoku(dim: usize, grid: &[u8]) {
     println!("");
 }
 
-pub fn prompt<T: whiteread::White>(prompt: &str) -> T {
+pub fn prompt<T: whiteread::White>(prompt: &str) -> Option<T> {
     print!("{}", prompt);
     io::stdout().flush().unwrap();
-    parse_line().unwrap()
+    match parse_line() {
+        Err(_) => None,
+        Ok(t) => Some(t)
+    }
 }
 
 pub fn get_sudoku_from_stdin(dimension: usize) -> Vec<u8> {

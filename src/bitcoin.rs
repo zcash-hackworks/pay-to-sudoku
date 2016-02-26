@@ -100,7 +100,8 @@ pub fn solve_sudoku(client: &mut jsonrpc::client::Client,
 }
 
 pub fn poll_for_payment(client: &mut jsonrpc::client::Client,
-                        p2sh: &str
+                        p2sh: &str,
+                        old_confirmations: &mut isize
 ) -> Option<(String, usize)>
 {
     let request = client.build_request("listtransactions".to_string(), vec!["*".into(), 100.into(), 0.into(), true.into()]);
@@ -128,7 +129,9 @@ pub fn poll_for_payment(client: &mut jsonrpc::client::Client,
             }
         }
 
-        if found && confirmations > 0 {
+        if found {
+            *old_confirmations = confirmations;
+
             return Some((txid.unwrap().into(), vout.unwrap().parse().unwrap()));
         }
     }

@@ -14,6 +14,7 @@ dependencies = [
  "rust-crypto 0.2.34 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 0.6.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "strason 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thread-scoped 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "whiteread 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -421,6 +422,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "rand 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "thread-scoped"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "time"
