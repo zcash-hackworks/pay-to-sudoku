@@ -3,6 +3,10 @@ authors = ["ewillbefull@gmail.com"]
 name = "pay-to-sudoku"
 version = "0.0.1"
 
+[dependencies.jsonrpc]
+version = "0.7.1"
+default-features = false
+
 [dependencies]
 bincode = "0.4.0"
 bzip2 = "0.2.3"
@@ -10,7 +14,6 @@ clap = "1.5.4"
 fixedbitset = "0.1.0"
 flate2 = "0.2.11"
 hex = "0.1.0"
-jsonrpc = "0.7.1"
 libc = "0.2.2"
 rand = "0.3.12"
 serde = "0.6.6"
