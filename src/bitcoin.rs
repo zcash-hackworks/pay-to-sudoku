@@ -60,7 +60,7 @@ pub fn solve_sudoku(client: &mut jsonrpc::client::Client,
         Ok(addr) => {
             let request = client.build_request("createrawtransaction".to_string(), vec![
                 Json::from_str(&format!("[{{\"txid\":\"{}\",\"vout\":{}}}]", txid, vout)).expect("parsing inputs"),
-                Json::from_str(&format!("{{\"{}\":0.09}}", addr)).expect("parsing outputs")
+                Json::from_str(&format!("{{\"{}\":0.099}}", addr)).expect("parsing outputs")
             ]);
             match client.send_request(&request).and_then(|res| res.into_result::<String>()) {
                 Ok(tx) => {
