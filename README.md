@@ -1,8 +1,16 @@
-# todo
+# pay-to-sudoku
 
-* better automated sudoku solver (current one sucks for bigger than 9x9 sudokus)
-* clean up code
-* bitcoin transaction stuff
+This is an implementation of a zero-knowledge contingent 
+payment for paying someone to solve a sudoku puzzle.
+
+```
+./get-libsnark
+make
+cargo run gen 2 # generate circuit for 2^2 x 2^2 puzzle
+cargo run test 2 # test the proofs
+cargo run serve 2 # run a server on port 25519 for buying solutions
+cargo run client 2 # run a client for selling solutions
+```
 
 # circuit description for some NxN puzzle:
 
