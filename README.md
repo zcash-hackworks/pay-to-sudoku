@@ -3,7 +3,7 @@
 **Author**: Sean Bowe
 
 This work was presented at Financial Cryptography 2016 and at <https://bitcoincore.org/en/2016/02/26/zero-knowledge-contingent-payments-announcement/>.
-We thank Gregory Maxwell for useful feedback and for participating in our demonstration. We also thank Pieter Wuille, Andrew Poelstra, and Madars Virza for helping with the demonstration.
+We thank Gregory Maxwell for the idea of ZKCPs, and for useful feedback and for participating in our demonstration. We also thank Pieter Wuille, Andrew Poelstra, and Madars Virza for helping with the demonstration.
 
 ---------------------------
 
