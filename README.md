@@ -5,6 +5,8 @@
 This work was presented at Financial Cryptography 2016 and at <https://bitcoincore.org/en/2016/02/26/zero-knowledge-contingent-payments-announcement/>.
 We thank Gregory Maxwell for the idea of ZKCPs, and for useful feedback and for participating in our demonstration. We also thank Pieter Wuille, Andrew Poelstra, and Madars Virza for helping with the demonstration.
 
+WARNING: This is not really zero-knowledge (buyer can learn sudoku contents) as shown in the [ZKCSP paper](http://stevengoldfeder.com/papers/ZKCSP.pdf). [Attack implementation](https://github.com/matteocam/pay-to-sudoku-attack), [Fix implementation](https://github.com/matteocam/zkcsp-over-bitcoin) 
+
 ---------------------------
 
 This is an implementation of a zero-knowledge contingent 
